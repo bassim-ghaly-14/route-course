@@ -1,0 +1,21 @@
+@import "tailwindcss";
+/* .row {
+  @apply flex flex-wrap py-6
+} */
+.swiper-button-next,
+.swiper-button-prev {
+  color: #16a34a !important; /* green-600 */
+}
+
+.swiper-pagination-bullet {
+  background: #16a34a !important;
+}
+
+.swiper-pagination-bullet-active {
+  background: #16a34a !important;
+}
+@layer base {
+  button {
+    @apply cursor-pointer;
+  }
+}
