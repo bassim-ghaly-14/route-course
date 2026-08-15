@@ -18,12 +18,10 @@ import Checkout from './components/Checkout/Checkout';
 import Allorders from './components/Allorders/Allorders';
 import OrderDetails from './components/OrderDetails/OrderDetails';
 import NotFound from './components/NotFound/NotFound';
-
+import Categories from './components/Categories/Categories';
 import ProtectRoutes from './components/ProtectRoutes/ProtectRoutes';
-
 import OfflineBanner from './components/Offline/Offline';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import Categories from './Components/Categories/Categories';
 
 const queryClient = new QueryClient();
 const router = createBrowserRouter([
