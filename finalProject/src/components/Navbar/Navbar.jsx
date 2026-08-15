@@ -1,6 +1,4 @@
 import { NavLink, useNavigate } from 'react-router-dom';
-import logo from '../../assets/images/brand-logo.PNG';
-import appIcon from '../../assets/images/appicon.png';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
   faFacebookF,
@@ -34,14 +32,14 @@ export default function Navbar() {
         <div className="logo flex flex-col lg:items-center lg:flex-row">
           {/* Mobile Logo */}
           <img
-            src={appIcon}
+            src="https://res.cloudinary.com/paihc5qx/image/upload/v1786814790/appicon_ksnaxi.png"
             alt="App Icon"
             className="w-14 h-14 block lg:hidden"
           />
 
           {/* Desktop Logo */}
           <img
-            src={logo}
+            src="https://res.cloudinary.com/paihc5qx/image/upload/v1786814794/brand-logo_ni2lzt.png"
             alt="Logo"
             className="hidden lg:block"
             width={120}
