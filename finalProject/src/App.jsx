@@ -12,7 +12,6 @@ import Register from './components/Register/Register';
 import Products from './components/Products/Products';
 import ProductDetails from './components/ProductDetails/ProductDetails';
 import CategoryProducts from './components/CategoryProducts/CategoryProducts';
-import Categories from "./Components/Categories/Categories";
 import Cart from './components/Cart/Cart';
 import Profile from './components/Profile/Profile';
 import Checkout from './components/Checkout/Checkout';
@@ -24,6 +23,7 @@ import ProtectRoutes from './components/ProtectRoutes/ProtectRoutes';
 
 import OfflineBanner from './components/Offline/Offline';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import Categories from './Components/Categories/Categories';
 
 const queryClient = new QueryClient();
 const router = createBrowserRouter([
