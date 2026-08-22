@@ -1,31 +1,54 @@
-# React + Vite
+# TRADO — E-Commerce Storefront
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+A full-featured e-commerce single-page app built with React, consuming the
+[Route Academy e-commerce API](https://ecommerce.routemisr.com/api/v1).
 
-Currently, two official plugins are available:
+## Features
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+- Browse products and categories, view product details with related products
+- Authentication (register/login) with protected routes
+- Persistent cart (add/update/remove items, empty cart) synced with the API
+- Stripe-hosted checkout session
+- Order history and order detail views
+- Offline detection banner
+- Responsive UI built with Tailwind CSS
 
-## React Compiler
+## Tech Stack
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+- **React 19** + **Vite**
+- **React Router 7** for routing and protected routes
+- **TanStack Query** for server-state (products, product details, related products)
+- **React Context** for auth and cart state
+- **Formik + Yup** for form handling and validation
+- **Axios** for HTTP requests (with a shared instance that auto-attaches the auth token)
+- **Tailwind CSS 4** for styling
+- **Swiper** for carousels
 
-## Expanding the ESLint configuration
+## Getting Started
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+```bash
+npm install
+npm run dev
+```
 
-<!--
-Account login:
+The app runs against the public Route Academy API — no environment variables
+or backend setup are required to run it locally.
 
-chatX@gmail.com
-X12345
--->
-<!--
-Stripe Card test:
+### Available Scripts
 
-3782 822463 10005
-02/27
-888
-chatX
--->
+- `npm run dev` — start the dev server
+- `npm run build` — production build
+- `npm run preview` — preview the production build locally
+- `npm run lint` — run ESLint
+
+## Project Structure
+
+```
+src/
+├── api/            # Shared axios instance (base URL + auth interceptor)
+├── Context/         # Auth (UserContext) and Cart (CartContext) providers
+├── components/      # Route-level and reusable UI components
+├── hooks/            # React Query hooks for products data
+├── lib/              # React Query client configuration
+└── App.jsx           # Router setup
+```

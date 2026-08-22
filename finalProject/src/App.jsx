@@ -21,9 +21,7 @@ import NotFound from './components/NotFound/NotFound';
 import Categories from './components/Categories/Categories';
 import ProtectRoutes from './components/ProtectRoutes/ProtectRoutes';
 import OfflineBanner from './components/Offline/Offline';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
-const queryClient = new QueryClient();
 const router = createBrowserRouter([
   {
     path: '/',
@@ -118,18 +116,16 @@ const router = createBrowserRouter([
 
 export default function App() {
   return (
-    <QueryClientProvider client={queryClient}>
-      <UserContextProvider>
-        <CartContextProvider>
+    <UserContextProvider>
+      <CartContextProvider>
 
-          <OfflineBanner />
+        <OfflineBanner />
 
-          <RouterProvider router={router} />
-          <Toaster />
-          <ReactQueryDevtools initialIsOpen={false} />
+        <RouterProvider router={router} />
+        <Toaster />
+        <ReactQueryDevtools initialIsOpen={false} />
 
-        </CartContextProvider>
-      </UserContextProvider>
-    </QueryClientProvider>
+      </CartContextProvider>
+    </UserContextProvider>
   );
 }

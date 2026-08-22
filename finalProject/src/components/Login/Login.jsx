@@ -1,7 +1,7 @@
 import { useState, useContext } from 'react'
 import { useFormik } from 'formik'
 import * as Yup from 'yup'
-import axios from 'axios'
+import { axiosInstance } from '../../api/axiosInstance'
 import { useNavigate } from 'react-router-dom'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faSpinner } from '@fortawesome/free-solid-svg-icons'
@@ -34,10 +34,7 @@ async function submitForm(val) {
   try {
     setloading(true)
     // API CALL to Login
-    const { data } = await axios.post(
-      'https://ecommerce.routemisr.com/api/v1/auth/signin',
-      val
-    )
+    const { data } = await axiosInstance.post('/auth/signin', val)
 
     // SUCCESSFUL LOGIN, NOW HOME
     saveUserToken(data.token)
@@ -45,7 +42,7 @@ async function submitForm(val) {
     navigate('/')
 
   } catch (err) {
-  console.log("API ERROR:", err.response?.data)
+  console.error("API ERROR:", err.response?.data)
     // ERROR HANDLING
   seterror(
     err?.response?.data?.message ||

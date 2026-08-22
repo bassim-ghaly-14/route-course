@@ -1,4 +1,4 @@
-import axios from "axios";
+import { axiosInstance } from "../../api/axiosInstance";
 import { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
@@ -11,20 +11,21 @@ export default function CategoryProducts() {
 
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
     async function getCategoryProducts() {
       try {
         setLoading(true);
+        setError(null);
 
-        const { data } = await axios.get(
-          `https://ecommerce.routemisr.com/api/v1/products?category=${id}`
-        );
+        const { data } = await axiosInstance.get(`/products?category=${id}`);
 
         setProducts(data.data || []);
       } catch (err) {
-        console.log(err);
+        console.error(err);
         setProducts([]);
+        setError("Failed to load products. Please try again.");
       } finally {
         setLoading(false);
       }
@@ -43,9 +44,11 @@ export default function CategoryProducts() {
         Category Products
       </h2>
 
-      {products.length === 0 ? (
+      {error ? (
+        <div className="text-center text-red-600 py-10">{error}</div>
+      ) : products.length === 0 ? (
         <div className="text-center text-gray-500 py-10">
-          oducts found in this category
+          No products found in this category
         </div>
       ) : (
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">

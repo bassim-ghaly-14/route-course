@@ -1,22 +1,23 @@
 import { useEffect, useState } from "react";
-import axios from "axios";
+import { axiosInstance } from "../../api/axiosInstance";
 import { Link } from "react-router-dom";
 import CategoriesSkeleton from "./CategoriesSkeleton";
 
 export default function Categories() {
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
     useEffect(() => {
     async function fetchCategories() {
         try {
-        const { data } = await axios.get(
-            "https://ecommerce.routemisr.com/api/v1/categories"
-        );
+        setError(null);
+        const { data } = await axiosInstance.get("/categories");
 
         setCategories(data.data || []);
         } catch (err) {
-        console.log(err);
+        console.error(err);
+        setError("Failed to load categories. Please try again.");
         } finally {
         setLoading(false);
         }
@@ -29,6 +30,14 @@ export default function Categories() {
     return <CategoriesSkeleton />
   }
 
+  if (error) {
+    return (
+      <div className="text-center py-10 text-red-600">
+        {error}
+      </div>
+    );
+  }
+
   return (
     <section className="container mx-auto px-6 py-10">
 
@@ -36,6 +45,11 @@ export default function Categories() {
         Shop Popular Categories
       </h2>
 
+      {categories.length === 0 ? (
+        <div className="text-center text-gray-500 py-10">
+          No categories found
+        </div>
+      ) : (
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
 
         {categories.map((category) => (
@@ -73,6 +87,7 @@ export default function Categories() {
         ))}
 
       </div>
+      )}
 
     </section>
   );

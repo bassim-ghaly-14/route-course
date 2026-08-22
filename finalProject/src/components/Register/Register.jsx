@@ -1,7 +1,7 @@
 import { useState, useContext } from 'react'
 import { useFormik } from 'formik'
 import * as Yup from 'yup'
-import axios from 'axios'
+import { axiosInstance } from '../../api/axiosInstance'
 import { useNavigate } from 'react-router-dom'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faSpinner } from '@fortawesome/free-solid-svg-icons'
@@ -25,7 +25,7 @@ export default function Register() {
     name: Yup.string()
       .required('Name is Required')
       .min(3, 'Too Short! Minimum 3')
-      .max(5, 'Too Long! Maximum 5'),
+      .max(50, 'Too Long! Maximum 50'),
 
     email: Yup.string()
       .required('Email is Required')
@@ -50,16 +50,12 @@ async function submitForm(val) {
   try {
     setloading(true)
     // API CALL to Register
-    const { data } = await axios.post(
-      'https://ecommerce.routemisr.com/api/v1/auth/signup',
-      val
-    )
+    const { data } = await axiosInstance.post('/auth/signup', val)
     // SUCCESSFUL REGISTER, NOW LOGIN
-    localStorage.setItem('userToken' , data.token)
     saveUserToken(data.token)
     navigate('/login')
   } catch (err) {
-  console.log("API ERROR:", err.response?.data)
+  console.error("API ERROR:", err.response?.data)
     // ERROR HANDLING
   seterror(
     err?.response?.data?.message ||

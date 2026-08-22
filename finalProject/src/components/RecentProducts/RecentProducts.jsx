@@ -1,4 +1,4 @@
-import axios from "axios";
+import { axiosInstance } from "../../api/axiosInstance";
 import { useState, useEffect, useContext } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faStar, faSpinner, faCartPlus } from "@fortawesome/free-solid-svg-icons";
@@ -14,6 +14,7 @@ export default function RecentProducts() {
 
   const [recentProducts, setRecentProducts] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [btnLoading, setBtnLoading] = useState(false);
   const [productId, setproductId] = useState(null);
 
@@ -21,44 +22,65 @@ export default function RecentProducts() {
     setproductId(prodId);
     setBtnLoading(true);
 
-    let response = await addProduct(prodId);
+    try {
+      const response = await addProduct(prodId);
 
-    if (response.data.status === "success") {
+      if (response?.data?.status === "success") {
+        toast.success(response.data.message || "Added to cart", {
+          position: "bottom-right",
+          duration: 1000,
+        });
+      } else {
+        toast.error("Failed to add product to cart", {
+          position: "bottom-right",
+          duration: 1000,
+        });
+      }
+    } catch (err) {
+      console.error(err);
+      toast.error(
+        err?.response?.data?.message || "Failed to add product to cart",
+        { position: "bottom-right", duration: 1000 }
+      );
+    } finally {
       setBtnLoading(false);
-
-      toast.success(response.data.message, {
-        position: "bottom-right",
-        duration: 1000,
-      });
-    } else {
-      setBtnLoading(false);
-
-      toast.error(response.data.message, {
-        position: "bottom-right",
-        duration: 1000,
-      });
     }
   }
 
   useEffect(() => {
     async function fetchProducts() {
       try {
-        const { data } = await axios.get(
-          "https://ecommerce.routemisr.com/api/v1/products"
-        );
+        setError(null);
+        const { data } = await axiosInstance.get("/products");
 
         setRecentProducts(data.data || []);
-        setLoading(false);
       } catch (err) {
-        console.log(err);
+        console.error(err);
+        setError("Failed to load products.");
+      } finally {
+        setLoading(false);
       }
     }
 
     fetchProducts();
   }, []);
 
-  if (loading || recentProducts.length === 0) {
+  // Only show the skeleton while the request is actually in flight.
+  // Previously an empty/failed result kept the skeleton on screen forever.
+  if (loading) {
     return <RecentProductsSkeleton />;
+  }
+
+  if (error) {
+    return <div className="text-center py-10 text-red-600">{error}</div>;
+  }
+
+  if (recentProducts.length === 0) {
+    return (
+      <div className="text-center py-10 text-gray-500">
+        No products available right now.
+      </div>
+    );
   }
 
   return (

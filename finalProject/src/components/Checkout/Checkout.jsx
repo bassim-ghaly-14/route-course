@@ -1,23 +1,50 @@
-import { useContext } from "react";
+import { useContext, useState } from "react";
 import { useFormik } from "formik";
+import * as Yup from "yup";
 import { CartContext } from "../../Context/CartContext";
+import toast from "react-hot-toast";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faSpinner } from "@fortawesome/free-solid-svg-icons";
 
 export default function Checkout() {
   const { checkOutNow } = useContext(CartContext);
+  const [loading, setLoading] = useState(false);
 
-  async function handleCheckout() {
+  const validate = Yup.object().shape({
+    details: Yup.string().required("Details are required"),
+    city: Yup.string().required("City is required"),
+    phone: Yup.string()
+      .required("Phone is required")
+      .matches(/^01[0125][0-9]{8}$/, "Invalid Egyptian phone number"),
+  });
+
+  async function handleCheckout(values) {
     const cartId = localStorage.getItem("cartId");
+
+    if (!cartId) {
+      toast.error("Your cart could not be found. Please revisit your cart.");
+      return;
+    }
 
     const url = window.location.origin;
 
-    const response = await checkOutNow(
-      cartId,
-      url,
-      formik.values
-    );
+    try {
+      setLoading(true);
 
-    if (response.data.status === "success") {
-      window.location.href = response.data.session.url;
+      const response = await checkOutNow(cartId, url, values);
+
+      if (response?.data?.status === "success" && response.data.session?.url) {
+        window.location.href = response.data.session.url;
+      } else {
+        toast.error("Checkout failed. Please try again.");
+      }
+    } catch (err) {
+      console.error(err);
+      toast.error(
+        err?.response?.data?.message || "Checkout failed. Please try again."
+      );
+    } finally {
+      setLoading(false);
     }
   }
 
@@ -27,6 +54,7 @@ export default function Checkout() {
       phone: "",
       city: "",
     },
+    validationSchema: validate,
     onSubmit: handleCheckout,
   });
 
@@ -62,6 +90,12 @@ export default function Checkout() {
             </label>
           </div>
 
+          {formik.errors.details && formik.touched.details ?
+            <div className="p-4 mb-4 text-sm text-red-700 bg-red-100 border border-red-300 rounded-lg" role="alert">
+              {formik.errors.details}
+            </div> : null
+          }
+
           {/* City */}
           <div className="relative z-0 w-full mb-5 group">
             <input
@@ -82,6 +116,12 @@ export default function Checkout() {
               Enter Your City
             </label>
           </div>
+
+          {formik.errors.city && formik.touched.city ?
+            <div className="p-4 mb-4 text-sm text-red-700 bg-red-100 border border-red-300 rounded-lg" role="alert">
+              {formik.errors.city}
+            </div> : null
+          }
 
           {/* Phone */}
           <div className="relative z-0 w-full mb-5 group">
@@ -104,12 +144,23 @@ export default function Checkout() {
             </label>
           </div>
 
+          {formik.errors.phone && formik.touched.phone ?
+            <div className="p-4 mb-4 text-sm text-red-700 bg-red-100 border border-red-300 rounded-lg" role="alert">
+              {formik.errors.phone}
+            </div> : null
+          }
+
           {/* Submit Button */}
           <button
             type="submit"
-            className="text-white bg-green-600 hover:bg-green-700 focus:ring-4 focus:ring-green-300 font-medium rounded-lg text-sm px-4 py-2.5 focus:outline-none"
+            disabled={loading}
+            className="text-white bg-green-600 hover:bg-green-700 focus:ring-4 focus:ring-green-300 font-medium rounded-lg text-sm px-4 py-2.5 focus:outline-none disabled:opacity-70 disabled:cursor-not-allowed"
           >
-            Check Out
+            {loading ? (
+              <FontAwesomeIcon icon={faSpinner} spin />
+            ) : (
+              'Check Out'
+            )}
           </button>
         </form>
       </div>

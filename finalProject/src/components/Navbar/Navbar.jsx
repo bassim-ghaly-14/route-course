@@ -13,13 +13,14 @@ import { CartContext } from '../../Context/CartContext';
 
 export default function Navbar() {
   const { userToken, logout } = useContext(UserContext);
-  const { cartItemsCount } = useContext(CartContext);
+  const { cartItemsCount, setCartItemsCount } = useContext(CartContext);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
 
   const navigate = useNavigate();
 
   function handleLogoutConfirm() {
     logout();
+    setCartItemsCount(0);
     setShowLogoutConfirm(false);
     navigate('/login');
   }
@@ -49,39 +50,42 @@ export default function Navbar() {
 
             {userToken ? (
               <>
-                <li className="px-3 py-2 hover:text-green-600">
-                  <NavLink to="/">Home</NavLink>
-                </li>
-
-                <li className="px-3 py-2 hover:text-green-600">
-                  <NavLink to="/products">Products</NavLink>
-                </li>
-
-                <li className="px-3 py-2 hover:text-green-600">
+                <li className="px-3 py-2">
                   <NavLink
-                    to="/categories"
-                    className="flex items-center gap-2"
+                    to="/"
+                    end
+                    className={({ isActive }) =>
+                      isActive ? "text-green-600 font-semibold" : "hover:text-green-600"
+                    }
                   >
-                    <FontAwesomeIcon icon={faLayerGroup} />
-                    Categories
+                    Home
                   </NavLink>
                 </li>
 
-                {/* <li className="px-3 py-2">
+                <li className="px-3 py-2">
+                  <NavLink
+                    to="/products"
+                    className={({ isActive }) =>
+                      isActive ? "text-green-600 font-semibold" : "hover:text-green-600"
+                    }
+                  >
+                    Products
+                  </NavLink>
+                </li>
+
+                <li className="px-3 py-2">
                   <NavLink
                     to="/categories"
                     className={({ isActive }) =>
                       `flex items-center gap-2 transition ${
-                        isActive
-                          ? "text-green-600 font-semibold"
-                          : "hover:text-green-600"
+                        isActive ? "text-green-600 font-semibold" : "hover:text-green-600"
                       }`
                     }
                   >
                     <FontAwesomeIcon icon={faLayerGroup} />
                     Categories
                   </NavLink>
-                </li> */}
+                </li>
 
                 <li className="px-3 py-2 hover:text-green-600">
                   <NavLink
@@ -130,8 +134,15 @@ export default function Navbar() {
                   </NavLink>
                 </li>
 
-                <li className="px-3 py-2 hover:text-green-600">
-                  <NavLink to="/profile">Profile</NavLink>
+                <li className="px-3 py-2">
+                  <NavLink
+                    to="/profile"
+                    className={({ isActive }) =>
+                      isActive ? "text-green-600 font-semibold" : "hover:text-green-600"
+                    }
+                  >
+                    Profile
+                  </NavLink>
                 </li>
 
               </>
@@ -145,12 +156,26 @@ export default function Navbar() {
 
             {!userToken ? (
               <>
-                <li className="px-3 py-2 hover:text-green-600">
-                  <NavLink to="/register">Register</NavLink>
+                <li className="px-3 py-2">
+                  <NavLink
+                    to="/register"
+                    className={({ isActive }) =>
+                      isActive ? "text-green-600 font-semibold" : "hover:text-green-600"
+                    }
+                  >
+                    Register
+                  </NavLink>
                 </li>
 
-                <li className="px-3 py-2 hover:text-green-600">
-                  <NavLink to="/login">Login</NavLink>
+                <li className="px-3 py-2">
+                  <NavLink
+                    to="/login"
+                    className={({ isActive }) =>
+                      isActive ? "text-green-600 font-semibold" : "hover:text-green-600"
+                    }
+                  >
+                    Login
+                  </NavLink>
                 </li>
               </>
             ) : (

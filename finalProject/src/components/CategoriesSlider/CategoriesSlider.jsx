@@ -1,4 +1,4 @@
-import axios from "axios";
+import { axiosInstance } from "../../api/axiosInstance";
 import { useEffect, useState } from "react";
 import { Swiper, SwiperSlide } from "swiper/react";
 import { Navigation } from "swiper/modules";
@@ -12,18 +12,18 @@ import SliderSkeleton from "./SliderSkeleton";
 export default function CategoriesSlider() {
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
     async function getCategories() {
       try {
-        const { data } = await axios.get(
-          "https://ecommerce.routemisr.com/api/v1/categories"
-        );
+        setError(null);
+        const { data } = await axiosInstance.get("/categories");
 
         setCategories(data.data || []);
       } catch (err) {
-        console.log(err);
-        setCategories([]); 
+        console.error(err);
+        setError("Failed to load categories.");
       } finally {
         setLoading(false);
       }
@@ -32,8 +32,20 @@ export default function CategoriesSlider() {
     getCategories();
   }, []);
 
-  if (loading || categories.length === 0) {
+  // Only show the skeleton while the request is actually in flight.
+  // Previously an empty/failed result kept the skeleton on screen forever.
+  if (loading) {
     return <SliderSkeleton />;
+  }
+
+  if (error) {
+    return (
+      <div className="my-10 text-center text-red-600">{error}</div>
+    );
+  }
+
+  if (categories.length === 0) {
+    return null;
   }
 
   return (

@@ -1,3 +1,4 @@
+import { Link } from "react-router-dom";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faFacebook,
@@ -40,11 +41,10 @@ export default function Footer() {
             </h3>
 
             <ul className="space-y-3 text-sm text-gray-600">
-              <li><a className="hover:text-green-600 transition" href="/">Home</a></li>
-              <li><a className="hover:text-green-600 transition" href="/products">Products</a></li>
-              <li><a className="hover:text-green-600 transition" href="/categories">Categories</a></li>
-              <li><a className="hover:text-green-600 transition" href="/brands">Brands</a></li>
-              <li><a className="hover:text-green-600 transition" href="/cart">Cart</a></li>
+              <li><Link className="hover:text-green-600 transition" to="/">Home</Link></li>
+              <li><Link className="hover:text-green-600 transition" to="/products">Products</Link></li>
+              <li><Link className="hover:text-green-600 transition" to="/categories">Categories</Link></li>
+              <li><Link className="hover:text-green-600 transition" to="/cart">Cart</Link></li>
             </ul>
           </div>
 

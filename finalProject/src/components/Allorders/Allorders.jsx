@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import axios from "axios";
+import { axiosInstance } from "../../api/axiosInstance";
 import { jwtDecode } from "jwt-decode";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
@@ -19,48 +19,42 @@ export default function Allorders() {
   const [currentPage, setCurrentPage] = useState(1);
   const ordersPerPage = 5;
 
-  async function getUserOrders() {
-    try {
-      setLoading(true);
-
-const token = localStorage.getItem("userToken");
-
-const user = token ? jwtDecode(token) : null;
-
-const userId =
-  localStorage.getItem("userId") ||
-  user?._id ||
-  user?.id ||
-  user?.userId ||
-  user?.sub;
-
-if (!userId) {
-  throw new Error("User ID not found");
-}
-
-const url = `https://ecommerce.routemisr.com/api/v1/orders/user/${userId}`;
-      const { data } = await axios.get(url, {
-        headers: { token },
-      });
-
-      const ordersData = Array.isArray(data)
-  ? data
-  : data?.data || [];
-
-setOrders([...ordersData].reverse());
-      console.log("Fetched orders:", data);
-    } catch (err) {
-      setError(
-        err?.response?.data?.message ||
-          err?.message ||
-          "Failed to load orders"
-      );
-    } finally {
-      setLoading(false);
-    }
-  }
-
   useEffect(() => {
+    async function getUserOrders() {
+      try {
+        setLoading(true);
+
+        const token = localStorage.getItem("userToken");
+
+        const user = token ? jwtDecode(token) : null;
+
+        const userId =
+          localStorage.getItem("userId") ||
+          user?._id ||
+          user?.id ||
+          user?.userId ||
+          user?.sub;
+
+        if (!userId) {
+          throw new Error("User ID not found");
+        }
+
+        const { data } = await axiosInstance.get(`/orders/user/${userId}`);
+
+        const ordersData = Array.isArray(data) ? data : data?.data || [];
+
+        setOrders([...ordersData].reverse());
+      } catch (err) {
+        setError(
+          err?.response?.data?.message ||
+            err?.message ||
+            "Failed to load orders"
+        );
+      } finally {
+        setLoading(false);
+      }
+    }
+
     getUserOrders();
   }, []);
 

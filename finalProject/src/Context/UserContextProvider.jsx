@@ -2,10 +2,36 @@ import { useState, useEffect } from 'react';
 import { UserContext } from './UserContext';
 import { jwtDecode } from "jwt-decode";
 
+function isTokenExpired(token) {
+  try {
+    const decoded = jwtDecode(token);
+    if (!decoded?.exp) return false; // no expiry claim, treat as valid
+    return decoded.exp * 1000 < Date.now();
+  } catch {
+    return true;
+  }
+}
+
+function extractUserId(decoded) {
+  return (
+    decoded._id ||
+    decoded.id ||
+    decoded.userId ||
+    decoded.sub ||
+    decoded?.user?._id
+  );
+}
+
 export default function UserContextProvider({ children }) {
 
   const [userToken, setUserToken] = useState(() => {
-    return localStorage.getItem('userToken');
+    const token = localStorage.getItem('userToken');
+    if (token && isTokenExpired(token)) {
+      localStorage.removeItem('userToken');
+      localStorage.removeItem('userId');
+      return null;
+    }
+    return token;
   });
 
   const loading = false;
@@ -13,23 +39,16 @@ export default function UserContextProvider({ children }) {
   useEffect(() => {
     const token = localStorage.getItem("userToken");
 
-    if (token) {
+    if (token && !isTokenExpired(token)) {
       try {
         const decoded = jwtDecode(token);
-
-        const userId =
-          decoded._id ||
-          decoded.id ||
-          decoded.userId ||
-          decoded.sub ||
-          decoded?.user?._id;
+        const userId = extractUserId(decoded);
 
         if (userId) {
           localStorage.setItem("userId", userId);
         }
-
       } catch (error) {
-        console.log(error);
+        console.error(error);
       }
     }
   }, []);
@@ -38,20 +57,17 @@ export default function UserContextProvider({ children }) {
   function saveUserToken(token) {
     localStorage.setItem("userToken", token);
 
-    const decoded = jwtDecode(token);
-    console.log("DECODED TOKEN:", decoded);
+    try {
+      const decoded = jwtDecode(token);
+      const userId = extractUserId(decoded);
 
-    const userId =
-      decoded._id ||
-      decoded.id ||
-      decoded.userId ||
-      decoded.sub ||
-      decoded?.user?._id;
-
-    if (!userId) {
-      console.error("USER ID NOT FOUND IN TOKEN");
-    } else {
-      localStorage.setItem("userId", userId);
+      if (!userId) {
+        console.error("USER ID NOT FOUND IN TOKEN");
+      } else {
+        localStorage.setItem("userId", userId);
+      }
+    } catch (error) {
+      console.error("Failed to decode token:", error);
     }
 
     setUserToken(token);
@@ -61,6 +77,7 @@ export default function UserContextProvider({ children }) {
   function logout() {
     localStorage.removeItem('userToken');
     localStorage.removeItem('userId');
+    localStorage.removeItem('cartId');
     setUserToken(null);
   }
 

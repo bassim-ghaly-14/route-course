@@ -1,5 +1,5 @@
 import { useEffect, useState, useContext } from "react";
-import axios from "axios";
+import { axiosInstance } from "../../api/axiosInstance";
 import { jwtDecode } from "jwt-decode";
 import { CartContext } from "../../Context/CartContext";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
@@ -35,33 +35,23 @@ export default function Profile() {
         user?.userId ||
         user?.sub;
 
-      console.log("DEBUG USER ID:", userId);
-
       if (!userId) {
-        console.log("NO USER ID");
         setOrders([]);
         setTotalOrders(0);
         setLoading(false);
         return;
       }
 
-      const response = await axios.get(
-  `https://ecommerce.routemisr.com/api/v1/orders/user/${userId}`,
-  {
-    headers: { token },
-  }
-);
+      const response = await axiosInstance.get(`/orders/user/${userId}`);
 
-console.log("PROFILE ORDERS:", response.data);
+      const ordersData = Array.isArray(response.data)
+        ? response.data
+        : response.data?.data || [];
 
-const ordersData = Array.isArray(response.data)
-  ? response.data
-  : response.data?.data || [];
-
-setOrders(ordersData);
-setTotalOrders(ordersData.length);
+      setOrders(ordersData);
+      setTotalOrders(ordersData.length);
     } catch (err) {
-      console.log(err);
+      console.error(err);
       setOrders([]);
       setTotalOrders(0);
     } finally {

@@ -1,4 +1,7 @@
-import { useLocation, Navigate } from 'react-router-dom';
+import { useLocation, useParams, Navigate } from 'react-router-dom';
+import { useEffect, useState } from 'react';
+import { axiosInstance } from '../../api/axiosInstance';
+import { jwtDecode } from 'jwt-decode';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
 faBox,
@@ -15,10 +18,68 @@ faMoneyBillWave,
 
 export default function OrderDetails() {
 const { state } = useLocation();
+const { id } = useParams();
 
-const order = state?.order;
+// Prefer the order handed off via router state (fast path from
+// Allorders/Profile). Fall back to fetching it so a page refresh or a
+// direct/shared link to /order/:id still works instead of bouncing home.
+const [order, setOrder] = useState(state?.order || null);
+const [loading, setLoading] = useState(!state?.order);
+const [notFound, setNotFound] = useState(false);
 
-if (!order) {
+useEffect(() => {
+  if (order || !id) return;
+
+  async function fetchOrder() {
+    try {
+      setLoading(true);
+
+      const token = localStorage.getItem('userToken');
+      const user = token ? jwtDecode(token) : null;
+
+      const userId =
+        localStorage.getItem('userId') ||
+        user?._id ||
+        user?.id ||
+        user?.userId ||
+        user?.sub;
+
+      if (!userId) {
+        setNotFound(true);
+        return;
+      }
+
+      const { data } = await axiosInstance.get(`/orders/user/${userId}`);
+      const orders = Array.isArray(data) ? data : data?.data || [];
+      const found = orders.find((o) => o._id === id);
+
+      if (found) {
+        setOrder(found);
+      } else {
+        setNotFound(true);
+      }
+    } catch (err) {
+      console.error(err);
+      setNotFound(true);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  fetchOrder();
+}, [id, order]);
+
+if (loading) {
+  return (
+    <section className="min-h-screen flex items-center justify-center">
+      <div className="animate-pulse text-green-600 font-bold text-lg">
+        Loading order...
+      </div>
+    </section>
+  );
+}
+
+if (notFound || !order) {
   return <Navigate to="/allorders" replace />;
 }
 
