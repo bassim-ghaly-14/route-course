@@ -29,18 +29,20 @@ export default function Cart() {
 
   const cartitems = data?.data;
 
-  // ── Empty-cart confirmation (destructive action) ──────────────────────
-  // Same dialog pattern as the Navbar logout confirm: portaled to <body>,
-  // Escape-to-close, body scroll lock, backdrop click cancels.
+  // ── Empty-cart confirmation ───────────────────────────────────────────
   const [showClearConfirm, setShowClearConfirm] = useState(false);
 
   useEffect(() => {
     if (!showClearConfirm) return;
 
-    const onKeyDown = (e) => {
-      if (e.key === "Escape") setShowClearConfirm(false);
+    const onKeyDown = (event) => {
+      if (event.key === "Escape") {
+        setShowClearConfirm(false);
+      }
     };
+
     document.addEventListener("keydown", onKeyDown);
+
     const previousOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
 
@@ -60,8 +62,7 @@ export default function Cart() {
     }
   }
 
-  // The single item currently being mutated (update or remove). Drives
-  // per-row loading state AND blocks overlapping mutations on that row.
+  // The single item currently being mutated.
   const pendingItemId = updateMutation.isPending
     ? updateMutation.variables?.productId
     : deleteMutation.isPending
@@ -69,14 +70,17 @@ export default function Cart() {
       : null;
 
   async function updateCartProducts(prodId, count) {
-    if (pendingItemId) return; // prevent duplicate/overlapping mutations
+    if (pendingItemId) return;
 
     if (count < 1) {
       return deleteCartProducts(prodId);
     }
 
     try {
-      await updateMutation.mutateAsync({ productId: prodId, count });
+      await updateMutation.mutateAsync({
+        productId: prodId,
+        count,
+      });
     } catch (err) {
       console.error(err);
       toast.error(getApiErrorMessage(err, "Failed to update quantity"));
@@ -84,7 +88,7 @@ export default function Cart() {
   }
 
   async function deleteCartProducts(prodId) {
-    if (pendingItemId) return; // prevent duplicate/overlapping mutations
+    if (pendingItemId) return;
 
     try {
       await deleteMutation.mutateAsync(prodId);
@@ -118,7 +122,7 @@ export default function Cart() {
         <FontAwesomeIcon
           icon={faCartShopping}
           aria-hidden="true"
-          className="mb-4 text-6xl text-primary-600 animate-bounce"
+          className="mb-4 animate-bounce text-6xl text-primary-600"
         />
 
         <h2 className="text-2xl font-bold text-strong">
@@ -143,9 +147,7 @@ export default function Cart() {
     <section className="py-6 sm:py-8">
       <div className="mx-auto max-w-7xl">
         <div className="mb-6 sm:mb-8">
-          <h2 className="section-header">
-            Shop Now
-          </h2>
+          <h2 className="section-header">Shop Now</h2>
         </div>
 
         <div className="card overflow-hidden shadow-md">
@@ -189,131 +191,133 @@ export default function Cart() {
 
               <tbody>
                 {cartitems.products.map((product) => {
-                  const isPending = pendingItemId === product.product.id;
+                  const isPending =
+                    pendingItemId === product.product.id;
 
                   return (
-                  <tr
-                    key={product.product.id}
-                    className={`border-b border-gray-100 transition-all duration-300 hover:bg-primary-50 ${
-                      isPending ? "opacity-60" : ""
-                    }`}
-                  >
-                    <td className="px-4 py-4 sm:px-5">
-                      <img
-                        src={product.product.imageCover}
-                        width={80}
-                        height={80}
-                        loading="lazy"
-                        decoding="async"
-                        className="h-16 w-16 rounded-xl border border-primary-100 object-cover sm:h-20 sm:w-20"
-                        alt={product.product.title}
-                      />
-                    </td>
+                    <tr
+                      key={product.product.id}
+                      className={`border-b border-gray-100 transition-all duration-300 hover:bg-primary-50 ${
+                        isPending ? "opacity-60" : ""
+                      }`}
+                    >
+                      <td className="px-4 py-4 sm:px-5">
+                        <img
+                          src={product.product.imageCover}
+                          width={80}
+                          height={80}
+                          loading="lazy"
+                          decoding="async"
+                          className="h-16 w-16 rounded-xl border border-primary-100 object-cover sm:h-20 sm:w-20"
+                          alt={product.product.title}
+                        />
+                      </td>
 
-                    <td className="px-4 py-4 sm:px-5">
-                      <h3 className="max-w-xs font-semibold leading-snug text-gray-800 line-clamp-2">
-                        {product.product.title}
-                      </h3>
-                    </td>
+                      <td className="px-4 py-4 sm:px-5">
+                        <h3 className="max-w-xs font-semibold leading-snug text-gray-800 line-clamp-2">
+                          {product.product.title}
+                        </h3>
+                      </td>
 
-                    <td className="px-4 py-4 sm:px-5">
-                      <div className="inline-flex items-center gap-2 rounded-full border border-primary-100 bg-primary-50 px-2.5 py-1.5 sm:gap-3 sm:px-3 sm:py-2">
-                        <button
-                          onClick={() =>
-                            updateCartProducts(
-                              product.product.id,
-                              product.count - 1
-                            )
-                          }
-                          disabled={isPending || product.count <= 1}
-                          type="button"
-                          aria-label={`Decrease quantity of ${product.product.title}`}
-                          className="flex h-8 w-8 items-center justify-center rounded-full border border-primary-200 bg-white transition-all hover:bg-primary-600 hover:text-white disabled:cursor-not-allowed disabled:opacity-40"
-                        >
-                          <svg
-                            className="h-3 w-3"
-                            aria-hidden="true"
-                            xmlns="http://www.w3.org/2000/svg"
-                            width={24}
-                            height={24}
-                            fill="none"
-                            viewBox="0 0 24 24"
+                      <td className="px-4 py-4 sm:px-5">
+                        <div className="inline-flex items-center gap-2 rounded-full border border-primary-100 bg-primary-50 px-2.5 py-1.5 sm:gap-3 sm:px-3 sm:py-2">
+                          <button
+                            onClick={() =>
+                              updateCartProducts(
+                                product.product.id,
+                                product.count - 1
+                              )
+                            }
+                            disabled={
+                              isPending || product.count <= 1
+                            }
+                            type="button"
+                            aria-label={`Decrease quantity of ${product.product.title}`}
+                            className="flex h-8 w-8 items-center justify-center rounded-full border border-primary-200 bg-white transition-all hover:bg-primary-600 hover:text-white disabled:cursor-not-allowed disabled:opacity-40"
                           >
-                            <path
-                              stroke="currentColor"
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth={2}
-                              d="M5 12h14"
-                            />
-                          </svg>
-                        </button>
+                            <svg
+                              className="h-3 w-3"
+                              aria-hidden="true"
+                              xmlns="http://www.w3.org/2000/svg"
+                              width={24}
+                              height={24}
+                              fill="none"
+                              viewBox="0 0 24 24"
+                            >
+                              <path
+                                stroke="currentColor"
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M5 12h14"
+                              />
+                            </svg>
+                          </button>
 
-                        <span className="min-w-5 text-center font-bold text-gray-700">
-                          {isPending ? (
-                            <FontAwesomeIcon
-                              icon={faSpinner}
-                              spin
-                              aria-label="Updating quantity"
-                            />
-                          ) : (
-                            product.count
-                          )}
+                          <span className="min-w-5 text-center font-bold text-gray-700">
+                            {isPending ? (
+                              <FontAwesomeIcon
+                                icon={faSpinner}
+                                spin
+                                aria-label="Updating quantity"
+                              />
+                            ) : (
+                              product.count
+                            )}
+                          </span>
+
+                          <button
+                            onClick={() =>
+                              updateCartProducts(
+                                product.product.id,
+                                product.count + 1
+                              )
+                            }
+                            disabled={isPending}
+                            type="button"
+                            aria-label={`Increase quantity of ${product.product.title}`}
+                            className="flex h-8 w-8 items-center justify-center rounded-full border border-primary-200 bg-white transition-all hover:bg-primary-600 hover:text-white disabled:cursor-not-allowed disabled:opacity-40"
+                          >
+                            <svg
+                              className="h-3 w-3"
+                              aria-hidden="true"
+                              xmlns="http://www.w3.org/2000/svg"
+                              width={24}
+                              height={24}
+                              fill="none"
+                              viewBox="0 0 24 24"
+                            >
+                              <path
+                                stroke="currentColor"
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M5 12h14m-7 7V5"
+                              />
+                            </svg>
+                          </button>
+                        </div>
+                      </td>
+
+                      <td className="whitespace-nowrap px-4 py-4 sm:px-5">
+                        <span className="text-base font-bold text-primary-600">
+                          {formatPrice(product.price)}
                         </span>
+                      </td>
 
+                      <td className="px-4 py-4 sm:px-5">
                         <button
-                          onClick={() =>
-                            updateCartProducts(
-                              product.product.id,
-                              product.count + 1
-                            )
-                          }
-// __CART2__
-                          disabled={isPending}
                           type="button"
-                          aria-label={`Increase quantity of ${product.product.title}`}
-                          className="flex h-8 w-8 items-center justify-center rounded-full border border-primary-200 bg-white transition-all hover:bg-primary-600 hover:text-white disabled:cursor-not-allowed disabled:opacity-40"
+                          disabled={isPending}
+                          onClick={() =>
+                            deleteCartProducts(product.product.id)
+                          }
+                          className="font-medium text-red-500 transition hover:text-red-700 hover:underline disabled:cursor-not-allowed disabled:opacity-40"
                         >
-                          <svg
-                            className="h-3 w-3"
-                            aria-hidden="true"
-                            xmlns="http://www.w3.org/2000/svg"
-                            width={24}
-                            height={24}
-                            fill="none"
-                            viewBox="0 0 24 24"
-                          >
-                            <path
-                              stroke="currentColor"
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth={2}
-                              d="M5 12h14m-7 7V5"
-                            />
-                          </svg>
+                          Remove
                         </button>
-                      </div>
-                    </td>
-
-                    <td className="whitespace-nowrap px-4 py-4 sm:px-5">
-                      <span className="text-base font-bold text-primary-600">
-                        {formatPrice(product.price)}
-                      </span>
-                    </td>
-
-                    <td className="px-4 py-4 sm:px-5">
-                      <button
-                        type="button"
-                        disabled={isPending}
-                        onClick={() =>
-                          deleteCartProducts(product.product.id)
-                        }
-                        className="font-medium text-red-500 transition hover:text-red-700 hover:underline disabled:cursor-not-allowed disabled:opacity-40"
-                      >
-                        Remove
-                      </button>
-                    </td>
-                  </tr>
+                      </td>
+                    </tr>
                   );
                 })}
               </tbody>
@@ -324,10 +328,14 @@ export default function Cart() {
             <div className="mb-5 flex flex-col items-center justify-between gap-2 sm:flex-row">
               <h3 className="text-lg font-semibold text-strong sm:text-xl">
                 Total Price
+
                 <span className="ml-2 text-sm font-medium text-muted">
-                  ({cartitems?.numOfCartItems ?? cartitems?.products?.length}{" "}
+                  (
+                  {cartitems?.numOfCartItems ??
+                    cartitems?.products?.length}{" "}
                   item
-                  {(cartitems?.numOfCartItems ?? cartitems?.products?.length) === 1
+                  {(cartitems?.numOfCartItems ??
+                    cartitems?.products?.length) === 1
                     ? ""
                     : "s"}
                   )
@@ -362,12 +370,12 @@ export default function Cart() {
         </div>
       </div>
 
-      {/* ── Empty-cart confirmation ─────────────────────────────────────── */}
+      {/* Empty-cart confirmation */}
       {showClearConfirm &&
         createPortal(
           <div
             className="modal-overlay fixed inset-0 z-999 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm"
-            onClick={() => setShowClearConfirm(false)}
+            aria-hidden="true"
           >
             <div
               role="dialog"
@@ -375,7 +383,6 @@ export default function Cart() {
               aria-labelledby="clear-cart-title"
               aria-describedby="clear-cart-description"
               className="modal-card card w-full max-w-md p-6 text-center shadow-xl sm:p-8"
-              onClick={(e) => e.stopPropagation()}
             >
               <span className="mx-auto mb-4 flex size-14 items-center justify-center rounded-full bg-red-100">
                 <FontAwesomeIcon
@@ -385,7 +392,10 @@ export default function Cart() {
                 />
               </span>
 
-              <h2 id="clear-cart-title" className="mb-2 text-xl font-bold text-strong">
+              <h2
+                id="clear-cart-title"
+                className="mb-2 text-xl font-bold text-strong"
+              >
                 Empty Your Cart?
               </h2>
 
@@ -398,7 +408,10 @@ export default function Cart() {
               </p>
 
               <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-center">
-                <Button variant="ghost" onClick={() => setShowClearConfirm(false)}>
+                <Button
+                  variant="ghost"
+                  onClick={() => setShowClearConfirm(false)}
+                >
                   Cancel
                 </Button>
 
