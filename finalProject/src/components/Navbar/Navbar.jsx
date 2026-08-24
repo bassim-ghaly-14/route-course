@@ -25,6 +25,7 @@ const ICON = 'text-base leading-none';
 
 const LOGO_APP =
   'https://res.cloudinary.com/paihc5qx/image/upload/v1786814790/appicon_ksnaxi.png';
+
 const LOGO_BRAND =
   'https://res.cloudinary.com/paihc5qx/image/upload/v1786814794/brand-logo_ni2lzt.png';
 
@@ -42,6 +43,7 @@ function formatCount(count) {
 /** Count pill anchored to an icon; only rendered when meaningful. */
 function CountBadge({ count }) {
   if (!count) return null;
+
   return (
     <span
       className="absolute -top-1 -right-1.5 flex h-5 min-w-5 items-center justify-center rounded-full bg-primary-600 px-1 text-[11px] font-bold text-white ring-2 ring-white transition-transform duration-200 motion-reduce:transition-none"
@@ -61,7 +63,9 @@ function CommerceLink({ to, label, count, icon, className = '' }) {
   return (
     <NavLink
       to={to}
-      aria-label={`${label}${count ? `, ${count} item${count === 1 ? '' : 's'}` : ''}`}
+      aria-label={`${label}${
+        count ? `, ${count} item${count === 1 ? '' : 's'}` : ''
+      }`}
       className={({ isActive }) =>
         `group relative flex size-11 items-center justify-center rounded-xl transition-colors duration-200 motion-reduce:transition-none ${className} ${
           isActive
@@ -74,6 +78,7 @@ function CommerceLink({ to, label, count, icon, className = '' }) {
         icon={icon}
         className={`${ICON} transition-transform duration-200 group-hover:scale-110 motion-reduce:transition-none`}
       />
+
       <CountBadge count={count} />
     </NavLink>
   );
@@ -83,7 +88,14 @@ function CommerceLink({ to, label, count, icon, className = '' }) {
  * Text navigation item with a soft pill treatment for the active route.
  * Shared by desktop bar and mobile sheet; NavLink sets aria-current="page".
  */
-function BrowseLink({ to, label, icon, end, onClose, className = '' }) {
+function BrowseLink({
+  to,
+  label,
+  icon,
+  end,
+  onClose,
+  className = '',
+}) {
   return (
     <NavLink
       to={to}
@@ -97,7 +109,12 @@ function BrowseLink({ to, label, icon, end, onClose, className = '' }) {
         }`
       }
     >
-      <FontAwesomeIcon icon={icon} className={ICON} aria-hidden="true" />
+      <FontAwesomeIcon
+        icon={icon}
+        className={ICON}
+        aria-hidden="true"
+      />
+
       {label}
     </NavLink>
   );
@@ -107,51 +124,62 @@ export default function Navbar() {
   const { userToken, logout } = useContext(UserContext);
   const { cartItemsCount } = useContext(CartContext);
   const { data: wishlistItems } = useWishlist();
-  const wishlistCount = userToken ? wishlistItems?.length ?? 0 : 0;
+
+  const wishlistCount = userToken
+    ? wishlistItems?.length ?? 0
+    : 0;
 
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
+
   const barRef = useRef(null);
   const location = useLocation();
   const navigate = useNavigate();
 
-  // The Navbar is position:fixed, so the Layout cannot know how tall it is
-  // from document flow. Publish the REAL rendered height of the header BAR
-  // (not the mobile sheet) to --navbar-height whenever it changes so <main>
-  // in Layout reserves exactly the right space. Single source of truth for
-  // navbar spacing across all routes.
+  // Publish the real rendered navbar height to --navbar-height.
   useEffect(() => {
     const el = barRef.current;
+
     if (!el) return;
 
-    const update = () =>
+    const update = () => {
       document.documentElement.style.setProperty(
         '--navbar-height',
         `${el.offsetHeight}px`
       );
+    };
 
     update();
+
     const observer = new ResizeObserver(update);
     observer.observe(el);
+
     return () => observer.disconnect();
   }, []);
 
-  // Close the mobile sheet on any route change (incl. back/forward).
-  // Render-time state adjustment (per React docs) rather than an effect.
+  // Close the mobile sheet on route changes.
   const [lastLocation, setLastLocation] = useState(location);
+
   if (location !== lastLocation) {
     setLastLocation(location);
-    if (menuOpen) setMenuOpen(false);
+
+    if (menuOpen) {
+      setMenuOpen(false);
+    }
   }
 
-  // While the mobile sheet is open: lock body scroll + support Escape.
+  // Lock body scroll + support Escape while mobile menu is open.
   useEffect(() => {
     if (!menuOpen) return;
 
-    const onKeyDown = (e) => {
-      if (e.key === 'Escape') setMenuOpen(false);
+    const onKeyDown = (event) => {
+      if (event.key === 'Escape') {
+        setMenuOpen(false);
+      }
     };
+
     document.addEventListener('keydown', onKeyDown);
+
     const previousOverflow = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
 
@@ -161,16 +189,18 @@ export default function Navbar() {
     };
   }, [menuOpen]);
 
-  // While the logout dialog is open: lock body scroll + support Escape.
-  // The dialog is portaled to <body>, so this also keeps the page steady
-  // behind the viewport-level overlay.
+  // Lock body scroll + support Escape while logout dialog is open.
   useEffect(() => {
     if (!showLogoutConfirm) return;
 
-    const onKeyDown = (e) => {
-      if (e.key === 'Escape') setShowLogoutConfirm(false);
+    const onKeyDown = (event) => {
+      if (event.key === 'Escape') {
+        setShowLogoutConfirm(false);
+      }
     };
+
     document.addEventListener('keydown', onKeyDown);
+
     const previousOverflow = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
 
@@ -183,6 +213,7 @@ export default function Navbar() {
   function handleLogoutConfirm() {
     logout();
     setShowLogoutConfirm(false);
+
     // Public route + replace so back/forward can't land on a protected page.
     navigate('/', { replace: true });
   }
@@ -190,43 +221,78 @@ export default function Navbar() {
   const closeMenu = () => setMenuOpen(false);
 
   return (
-    <nav aria-label="Main navigation" className="glass fixed inset-x-0 top-0 z-50 shadow-sm">
-      {/* ── Header bar ─────────────────────────────────────────────── */}
+    <nav
+      aria-label="Main navigation"
+      className="glass fixed inset-x-0 top-0 z-50 shadow-sm"
+    >
+      {/* Header bar */}
       <div
         ref={barRef}
         className="mx-auto flex h-14 w-full max-w-7xl items-center justify-between gap-2 px-4 sm:px-6 lg:h-16 lg:px-8"
       >
-        {/* Logo — primary home affordance */}
+        {/* Logo */}
         <Link
           to="/"
           aria-label="TRADO — go to homepage"
           className="shrink-0 rounded-lg transition-opacity duration-200 hover:opacity-80 motion-reduce:transition-none"
         >
-          <img src={LOGO_APP} alt="" width={40} height={40} className="h-10 w-10 lg:hidden" />
-          <img src={LOGO_BRAND} alt="" width={120} height={36} className="hidden lg:block" />
+          <img
+            src={LOGO_APP}
+            alt=""
+            width={40}
+            height={40}
+            className="h-10 w-10 lg:hidden"
+          />
+
+          <img
+            src={LOGO_BRAND}
+            alt=""
+            width={120}
+            height={36}
+            className="hidden lg:block"
+          />
         </Link>
 
-        {/* Primary browsing navigation (desktop) */}
+        {/* Primary browsing navigation */}
         <ul className="hidden items-center gap-1 lg:flex">
           {BROWSE_LINKS.map(({ to, label, icon, end }) => (
             <li key={to}>
-              <BrowseLink to={to} label={label} icon={icon} end={end} />
+              <BrowseLink
+                to={to}
+                label={label}
+                icon={icon}
+                end={end}
+              />
             </li>
           ))}
         </ul>
 
-        {/* Right side: commerce + account actions (desktop), cart + menu (mobile) */}
+        {/* Right side actions */}
         <div className="flex items-center gap-1">
           {/* Desktop actions */}
           <div className="hidden items-center gap-1 lg:flex">
             {userToken && (
               <>
-                <CommerceLink to="/wishlist" label="Wishlist" count={wishlistCount} icon={faHeart} />
-                <CommerceLink to="/cart" label="Cart" count={cartItemsCount} icon={faCartShopping} />
+                <CommerceLink
+                  to="/wishlist"
+                  label="Wishlist"
+                  count={wishlistCount}
+                  icon={faHeart}
+                />
+
+                <CommerceLink
+                  to="/cart"
+                  label="Cart"
+                  count={cartItemsCount}
+                  icon={faCartShopping}
+                />
               </>
             )}
 
-            <span className="mx-1 h-6 w-px bg-line" aria-hidden="true" />
+            <span
+              className="mx-1 h-6 w-px bg-line"
+              aria-hidden="true"
+            />
 
             {userToken ? (
               <NavLink
@@ -239,7 +305,12 @@ export default function Navbar() {
                   }`
                 }
               >
-                <FontAwesomeIcon icon={faCircleUser} className={ICON} aria-hidden="true" />
+                <FontAwesomeIcon
+                  icon={faCircleUser}
+                  className={ICON}
+                  aria-hidden="true"
+                />
+
                 Profile
               </NavLink>
             ) : (
@@ -248,9 +319,15 @@ export default function Navbar() {
                   to="/login"
                   className="flex items-center gap-2 rounded-xl px-3 py-2 font-medium text-strong transition-colors duration-200 hover:bg-primary-50 hover:text-primary-700"
                 >
-                  <FontAwesomeIcon icon={faRightToBracket} className={ICON} aria-hidden="true" />
+                  <FontAwesomeIcon
+                    icon={faRightToBracket}
+                    className={ICON}
+                    aria-hidden="true"
+                  />
+
                   Login
                 </Link>
+
                 <Link
                   to="/register"
                   className="rounded-xl bg-primary-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition-colors duration-200 hover:bg-primary-700"
@@ -261,7 +338,7 @@ export default function Navbar() {
             )}
           </div>
 
-          {/* Cart shortcut stays reachable on every screen size */}
+          {/* Mobile cart */}
           {userToken && (
             <CommerceLink
               to="/cart"
@@ -281,12 +358,16 @@ export default function Navbar() {
             aria-label={menuOpen ? 'Close menu' : 'Open menu'}
             className="flex size-11 items-center justify-center rounded-xl text-strong transition-colors duration-200 hover:bg-primary-50 hover:text-primary-700 lg:hidden"
           >
-            <FontAwesomeIcon icon={menuOpen ? faXmark : faBars} className="text-lg" aria-hidden="true" />
+            <FontAwesomeIcon
+              icon={menuOpen ? faXmark : faBars}
+              className="text-lg"
+              aria-hidden="true"
+            />
           </button>
         </div>
       </div>
 
-      {/* ── Mobile sheet ────────────────────────────────────────────── */}
+      {/* Mobile sheet */}
       <div
         id="mobile-menu"
         hidden={!menuOpen}
@@ -297,6 +378,7 @@ export default function Navbar() {
           <p className="px-3 pb-1 pt-3 text-xs font-semibold uppercase tracking-wider text-muted">
             Navigation
           </p>
+
           <ul className="flex flex-col gap-1">
             {BROWSE_LINKS.map(({ to, label, icon, end }) => (
               <li key={to}>
@@ -318,12 +400,19 @@ export default function Navbar() {
               <p className="px-3 pb-1 pt-5 text-xs font-semibold uppercase tracking-wider text-muted">
                 Shopping
               </p>
+
               <ul className="flex flex-col gap-1">
                 <li>
                   <NavLink
                     to="/wishlist"
                     onClick={closeMenu}
-                    aria-label={`Wishlist${wishlistCount ? `, ${wishlistCount} item${wishlistCount === 1 ? '' : 's'}` : ''}`}
+                    aria-label={`Wishlist${
+                      wishlistCount
+                        ? `, ${wishlistCount} item${
+                            wishlistCount === 1 ? '' : 's'
+                          }`
+                        : ''
+                    }`}
                     className={({ isActive }) =>
                       `flex min-h-11 w-full items-center gap-2 rounded-xl px-3 py-2 font-medium transition-colors ${
                         isActive
@@ -332,8 +421,14 @@ export default function Navbar() {
                       }`
                     }
                   >
-                    <FontAwesomeIcon icon={faHeart} className={ICON} aria-hidden="true" />
+                    <FontAwesomeIcon
+                      icon={faHeart}
+                      className={ICON}
+                      aria-hidden="true"
+                    />
+
                     Wishlist
+
                     {wishlistCount > 0 && (
                       <span className="ml-auto flex h-5 min-w-5 items-center justify-center rounded-full bg-primary-600 px-1.5 text-[11px] font-bold text-white">
                         {formatCount(wishlistCount)}
@@ -341,11 +436,18 @@ export default function Navbar() {
                     )}
                   </NavLink>
                 </li>
+
                 <li>
                   <NavLink
                     to="/cart"
                     onClick={closeMenu}
-                    aria-label={`Cart${cartItemsCount ? `, ${cartItemsCount} item${cartItemsCount === 1 ? '' : 's'}` : ''}`}
+                    aria-label={`Cart${
+                      cartItemsCount
+                        ? `, ${cartItemsCount} item${
+                            cartItemsCount === 1 ? '' : 's'
+                          }`
+                        : ''
+                    }`}
                     className={({ isActive }) =>
                       `flex min-h-11 w-full items-center gap-2 rounded-xl px-3 py-2 font-medium transition-colors ${
                         isActive
@@ -354,8 +456,14 @@ export default function Navbar() {
                       }`
                     }
                   >
-                    <FontAwesomeIcon icon={faCartShopping} className={ICON} aria-hidden="true" />
+                    <FontAwesomeIcon
+                      icon={faCartShopping}
+                      className={ICON}
+                      aria-hidden="true"
+                    />
+
                     Cart
+
                     {cartItemsCount > 0 && (
                       <span className="ml-auto flex h-5 min-w-5 items-center justify-center rounded-full bg-primary-600 px-1.5 text-[11px] font-bold text-white">
                         {formatCount(cartItemsCount)}
@@ -371,6 +479,7 @@ export default function Navbar() {
           <p className="px-3 pb-1 pt-5 text-xs font-semibold uppercase tracking-wider text-muted">
             Account
           </p>
+
           <ul className="flex flex-col gap-1 border-t border-line pt-3">
             {userToken ? (
               <>
@@ -386,10 +495,16 @@ export default function Navbar() {
                       }`
                     }
                   >
-                    <FontAwesomeIcon icon={faCircleUser} className={ICON} aria-hidden="true" />
+                    <FontAwesomeIcon
+                      icon={faCircleUser}
+                      className={ICON}
+                      aria-hidden="true"
+                    />
+
                     Profile
                   </NavLink>
                 </li>
+
                 <li>
                   <button
                     type="button"
@@ -399,7 +514,12 @@ export default function Navbar() {
                     }}
                     className="flex min-h-11 w-full items-center gap-2 rounded-xl px-3 py-2 font-medium text-error transition-colors hover:bg-red-50"
                   >
-                    <FontAwesomeIcon icon={faRightFromBracket} className={ICON} aria-hidden="true" />
+                    <FontAwesomeIcon
+                      icon={faRightFromBracket}
+                      className={ICON}
+                      aria-hidden="true"
+                    />
+
                     Logout
                   </button>
                 </li>
@@ -418,10 +538,16 @@ export default function Navbar() {
                       }`
                     }
                   >
-                    <FontAwesomeIcon icon={faRightToBracket} className={ICON} aria-hidden="true" />
+                    <FontAwesomeIcon
+                      icon={faRightToBracket}
+                      className={ICON}
+                      aria-hidden="true"
+                    />
+
                     Login
                   </NavLink>
                 </li>
+
                 <li className="px-1 pt-1">
                   <Link
                     to="/register"
@@ -437,15 +563,11 @@ export default function Navbar() {
         </div>
       </div>
 
-      {/* ── Logout confirmation ─────────────────────────────────────── */}
-      {/* Portaled to <body>: the Navbar's backdrop-blur creates a containing
-          block that would otherwise trap a "fixed" overlay relative to the
-          bar instead of the viewport. */}
+      {/* Logout confirmation */}
       {showLogoutConfirm &&
         createPortal(
           <div
             className="modal-overlay fixed inset-0 z-999 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm"
-            onClick={() => setShowLogoutConfirm(false)}
           >
             <div
               role="dialog"
@@ -453,7 +575,6 @@ export default function Navbar() {
               aria-labelledby="logout-title"
               aria-describedby="logout-description"
               className="modal-card card w-full max-w-md p-6 text-center shadow-xl sm:p-8"
-              onClick={(e) => e.stopPropagation()}
             >
               <span className="mx-auto mb-4 flex size-14 items-center justify-center rounded-full bg-amber-100">
                 <FontAwesomeIcon
@@ -463,16 +584,25 @@ export default function Navbar() {
                 />
               </span>
 
-              <h2 id="logout-title" className="mb-2 text-xl font-bold text-strong">
+              <h2
+                id="logout-title"
+                className="mb-2 text-xl font-bold text-strong"
+              >
                 Confirm Logout
               </h2>
 
-              <p id="logout-description" className="mb-6 text-muted">
+              <p
+                id="logout-description"
+                className="mb-6 text-muted"
+              >
                 Are you sure you want to logout?
               </p>
 
               <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-center">
-                <Button variant="ghost" onClick={() => setShowLogoutConfirm(false)}>
+                <Button
+                  variant="ghost"
+                  onClick={() => setShowLogoutConfirm(false)}
+                >
                   Cancel
                 </Button>
 
@@ -482,7 +612,11 @@ export default function Navbar() {
                   onClick={handleLogoutConfirm}
                   className="min-w-36"
                 >
-                  <FontAwesomeIcon icon={faRightFromBracket} aria-hidden="true" />
+                  <FontAwesomeIcon
+                    icon={faRightFromBracket}
+                    aria-hidden="true"
+                  />
+
                   Logout
                 </Button>
               </div>
