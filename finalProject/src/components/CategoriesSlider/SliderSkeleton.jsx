@@ -1,7 +1,7 @@
 export default function SliderSkeleton() {
   return (
     <div className="my-10">
-      <h2 className="text-green-600 text-2xl font-bold mb-6">
+      <h2 className="text-primary-600 text-2xl font-bold mb-6">
         Shop Popular Categories
       </h2>
 

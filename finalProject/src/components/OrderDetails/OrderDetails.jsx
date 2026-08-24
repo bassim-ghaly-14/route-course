@@ -1,377 +1,292 @@
-import { useLocation, useParams, Navigate } from 'react-router-dom';
-import { useEffect, useState } from 'react';
-import { axiosInstance } from '../../api/axiosInstance';
-import { jwtDecode } from 'jwt-decode';
+import { useParams, Link } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
-faBox,
-faCreditCard,
-faTruck,
-faCircleCheck,
-faClock,
-faUser,
-faEnvelope,
-faPhone,
-faLocationDot,
-faMoneyBillWave,
+  faArrowLeft,
+  faCircleCheck,
+  faClock,
+  faCreditCard,
+  faLocationDot,
+  faPhone,
+  faTruck,
+  faUser,
 } from '@fortawesome/free-solid-svg-icons';
 
-export default function OrderDetails() {
-const { state } = useLocation();
-const { id } = useParams();
+import useOrder from '../../hooks/useOrder';
+import { formatPrice } from '../../lib/format';
+import Badge from '../ui/Badge';
+import Button from '../ui/Button';
+import Breadcrumb from '../ui/Breadcrumb';
+import ErrorState from '../ui/ErrorState';
+import OrderDetailsSkeleton from './OrderDetailsSkeleton';
 
-// Prefer the order handed off via router state (fast path from
-// Allorders/Profile). Fall back to fetching it so a page refresh or a
-// direct/shared link to /order/:id still works instead of bouncing home.
-const [order, setOrder] = useState(state?.order || null);
-const [loading, setLoading] = useState(!state?.order);
-const [notFound, setNotFound] = useState(false);
+/**
+ * Order Details — resolved client-side by useOrder() from the shared
+ * user-orders cache (the API has no GET /orders/:id endpoint). The router
+ * state passed by OrderCard/RecentOrderRow makes the fast path free.
+ *
+ * Status semantics intentionally mirror OrderCard on /orders: payment is
+ * Paid/Pending (isPaid), delivery is Delivered/Processing (isDelivered).
+ */
 
-useEffect(() => {
-  if (order || !id) return;
+function InfoRow({ icon, label, value }) {
+  if (!value) return null;
 
-  async function fetchOrder() {
-    try {
-      setLoading(true);
-
-      const token = localStorage.getItem('userToken');
-      const user = token ? jwtDecode(token) : null;
-
-      const userId =
-        localStorage.getItem('userId') ||
-        user?._id ||
-        user?.id ||
-        user?.userId ||
-        user?.sub;
-
-      if (!userId) {
-        setNotFound(true);
-        return;
-      }
-
-      const { data } = await axiosInstance.get(`/orders/user/${userId}`);
-      const orders = Array.isArray(data) ? data : data?.data || [];
-      const found = orders.find((o) => o._id === id);
-
-      if (found) {
-        setOrder(found);
-      } else {
-        setNotFound(true);
-      }
-    } catch (err) {
-      console.error(err);
-      setNotFound(true);
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  fetchOrder();
-}, [id, order]);
-
-if (loading) {
   return (
-    <section className="min-h-screen flex items-center justify-center">
-      <div className="animate-pulse text-green-600 font-bold text-lg">
-        Loading order...
+    <div className="flex items-start gap-3">
+      {icon && (
+        <FontAwesomeIcon
+          icon={icon}
+          aria-hidden="true"
+          className="mt-1 text-primary-600"
+        />
+      )}
+      <div className="min-w-0">
+        <p className="text-xs font-medium uppercase tracking-wide text-muted">
+          {label}
+        </p>
+        <p className="wrap-break-word font-medium text-strong">{value}</p>
       </div>
-    </section>
+    </div>
   );
 }
 
-if (notFound || !order) {
-  return <Navigate to="/allorders" replace />;
-}
+export default function OrderDetails() {
+  const { id } = useParams();
+  const { data: order, isLoading, isError, refetch } = useOrder(id);
 
-return <>
-    <section className="container mx-auto px-6 py-10">
-        <h2 className="text-green-600 text-2xl font-bold mb-6">
-            Order Details
-        </h2>
-    {/* Header */}
-    <div className="bg-white rounded-3xl shadow-lg p-8 mb-8 border border-gray-100">
+  if (isLoading) {
+    return <OrderDetailsSkeleton />;
+  }
 
-      <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-5">
-
-        <div>
-          <p className="text-gray-500 text-sm">
-            Order ID
-          </p>
-
-          <h1 className="text-3xl md:text-4xl font-black text-green-600">
-            #{order._id.slice(-8)}
-          </h1>
-
-          <p className="text-gray-500 mt-2">
-            {new Date(order.createdAt).toLocaleString("en-GB", {
-                        day: "numeric",
-                        month: "short",
-                        year: "numeric",
-                        hour: "2-digit",
-                        minute: "2-digit",
-            })}
-          </p>
-        </div>
-
-        <div className="flex flex-wrap gap-3">
-
-          <span
-            className={`px-4 py-2 rounded-full text-sm font-semibold ${
-              order.isPaid
-                ? "bg-green-100 text-green-700"
-                : "bg-yellow-100 text-yellow-700"
-            }`}
-          >
-            <FontAwesomeIcon
-              icon={order.isPaid ? faCircleCheck : faClock}
-              className="mr-2"
-            />
-
-            {order.isPaid ? "Paid" : "Pending Payment"}
-          </span>
-
-          <span className="px-4 py-2 rounded-full text-sm font-semibold bg-blue-100 text-blue-700">
-            <FontAwesomeIcon
-              icon={faCreditCard}
-              className="mr-2"
-            />
-
-            {order.paymentMethodType}
-          </span>
-
-        </div>
-
-      </div>
-
-    </div>
-
-    {/* Stats */}
-    <div className="grid md:grid-cols-3 gap-6 mb-8">
-
-      <div className="bg-white rounded-3xl p-7 shadow-lg border border-gray-100">
-        <div className="flex justify-between items-center">
-
-          <div>
-            <p className="text-gray-500">
-              Total Price
-            </p>
-
-            <h3 className="text-4xl font-black text-green-600 mt-2">
-              {order.totalOrderPrice} EGP
-            </h3>
-          </div>
-
-          <div className="w-16 h-16 rounded-2xl bg-green-100 flex items-center justify-center text-green-600 text-2xl">
-            <FontAwesomeIcon icon={faMoneyBillWave} />
-          </div>
-
-        </div>
-      </div>
-
-      <div className="bg-white rounded-3xl p-7 shadow-lg border border-gray-100">
-        <div className="flex justify-between items-center">
-
-          <div>
-            <p className="text-gray-500">
-              Items
-            </p>
-
-            <h3 className="text-4xl font-black text-blue-600 mt-2">
-              {order.cartItems?.length}
-            </h3>
-          </div>
-
-          <div className="w-16 h-16 rounded-2xl bg-blue-100 flex items-center justify-center text-blue-600 text-2xl">
-            <FontAwesomeIcon icon={faBox} />
-          </div>
-
-        </div>
-      </div>
-
-      <div className="bg-white rounded-3xl p-7 shadow-lg border border-gray-100">
-        <div className="flex justify-between items-center">
-
-          <div>
-            <p className="text-gray-500">
-              Delivery
-            </p>
-
-            <h3 className="text-2xl font-black text-emerald-600 mt-2">
-              {order.isDelivered
-                ? "Delivered"
-                : "Preparing"}
-            </h3>
-          </div>
-
-          <div className="w-16 h-16 rounded-2xl bg-emerald-100 flex items-center justify-center text-emerald-600 text-2xl">
-            <FontAwesomeIcon icon={faTruck} />
-          </div>
-
-        </div>
-      </div>
-
-    </div>
-
-    {/* Customer Info */}
-    <div className="bg-white rounded-3xl shadow-lg p-8 mb-8 border border-gray-100">
-
-      <h2 className="text-2xl font-bold text-green-600 mb-6">
-        Customer Information
-      </h2>
-
-      <div className="grid md:grid-cols-2 gap-5">
-
-        <div className="flex items-center gap-3">
-          <FontAwesomeIcon
-            icon={faUser}
-            className="text-green-600"
+  if (!order) {
+    return (
+      <section className="page-container py-8 sm:py-10">
+        {isError ? (
+          <ErrorState
+            message="We couldn't load this order. Please try again."
+            onRetry={refetch}
           />
+        ) : (
+          <ErrorState message="Order not found." />
+        )}
 
-          <span>{order.user?.name}</span>
+        <div className="-mt-8 flex justify-center">
+          <Link to="/orders">
+            <Button variant="outline">Back to Orders</Button>
+          </Link>
         </div>
+      </section>
+    );
+  }
 
-        <div className="flex items-center gap-3">
-          <FontAwesomeIcon
-            icon={faEnvelope}
-            className="text-green-600"
-          />
+  const placedAt = order.createdAt
+    ? new Date(order.createdAt).toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric',
+      })
+    : null;
 
-          <span>{order.user?.email}</span>
-        </div>
+  const items = order.cartItems ?? [];
+  // Subtotal is derived from real line items — the API exposes no separate
+  // shipping/tax/discount fields, so none are shown.
+  const subtotal = items.reduce(
+    (sum, item) => sum + (item.price || 0) * (item.count || 0),
+    0
+  );
+  const itemCount = items.reduce((sum, item) => sum + (item.count || 0), 0);
+  const address = order.shippingAddress;
+  const addressDetails = [address?.city, address?.details]
+    .filter(Boolean)
+    .join(' · ');
 
-        <div className="flex items-center gap-3">
-          <FontAwesomeIcon
-            icon={faPhone}
-            className="text-green-600"
-          />
+  return (
+    <section className="page-container py-8 sm:py-10">
+      {/* Header */}
+      <header>
+        <Breadcrumb
+          items={[
+            { label: 'Home', to: '/' },
+            { label: 'Orders', to: '/orders' },
+            { label: `Order #${order._id.slice(-6)}` },
+          ]}
+        />
 
-          <span>{order.user?.phone}</span>
-        </div>
-
-        <div className="flex items-center gap-3">
-          <FontAwesomeIcon
-            icon={faLocationDot}
-            className="text-green-600"
-          />
-
-          <span>
-            {order.shippingAddress?.city || "N/A"}
-          </span>
-        </div>
-
-      </div>
-
-    </div>
-
-    {/* Timeline */}
-    <div className="bg-white rounded-3xl shadow-lg p-8 mb-8 border border-gray-100">
-
-      <h2 className="text-2xl font-bold text-green-600 mb-6">
-        Order Timeline
-      </h2>
-
-      <div className="space-y-4">
-
-        <div className="flex items-center gap-4 text-green-600">
-          <FontAwesomeIcon icon={faCircleCheck} />
-          <span>Order Created</span>
-        </div>
-
-        <div
-          className={`flex items-center gap-4 ${
-            order.isPaid
-              ? "text-green-600"
-              : "text-yellow-600"
-          }`}
-        >
-          <FontAwesomeIcon
-            icon={order.isPaid ? faCircleCheck : faClock}
-          />
-
-          <span>
-            {order.isPaid
-              ? "Payment Completed"
-              : "Waiting For Payment"}
-          </span>
-        </div>
-
-        <div
-          className={`flex items-center gap-4 ${
-            order.isDelivered
-              ? "text-green-600"
-              : "text-gray-400"
-          }`}
-        >
-          <FontAwesomeIcon icon={faTruck} />
-
-          <span>
-            {order.isDelivered
-              ? "Delivered"
-              : "Preparing Shipment"}
-          </span>
-        </div>
-
-      </div>
-
-    </div>
-
-    {/* Products */}
-    <div className="bg-white rounded-3xl shadow-lg p-8 border border-gray-100">
-
-      <h2 className="text-2xl font-bold text-green-600 mb-6">
-        Products
-      </h2>
-
-      <div className="space-y-4">
-
-        {order.cartItems?.map((item) => (
-          <div
-            key={item._id}
-            className="flex flex-col md:flex-row items-center gap-5 border border-gray-100 rounded-2xl p-4 hover:shadow-md transition"
-          >
-
-            <img
-              src={item.product?.imageCover}
-              alt={item.product?.title}
-              className="w-24 h-24 object-cover rounded-xl"
-            />
-
-            <div className="flex-1">
-
-              <h3 className="font-bold text-lg">
-                {item.product?.title}
-              </h3>
-
-              <p className="text-gray-500">
-                {item.product?.category?.name}
+        <div className="rounded-2xl border border-line bg-surface p-5 shadow-sm sm:p-6">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+            <div className="min-w-0">
+              <h1 className="truncate text-2xl font-black tracking-tight text-primary-700 sm:text-3xl">
+                Order #{order._id.slice(-6)}
+              </h1>
+              {placedAt && (
+                <p className="mt-1 text-muted">Placed on {placedAt}</p>
+              )}
+              <p className="mt-0.5 text-sm text-muted">
+                {itemCount} {itemCount === 1 ? 'item' : 'items'}
               </p>
-
-              <p className="text-gray-500">
-                Brand: {item.product?.brand?.name}
-              </p>
-
             </div>
 
-            <div className="text-center">
+            {/* Same status interpretation as OrderCard on /orders */}
+            <div className="flex flex-wrap items-center gap-2">
+              <Badge tone={order.isPaid ? 'success' : 'warning'}>
+                <FontAwesomeIcon
+                  icon={order.isPaid ? faCircleCheck : faClock}
+                  aria-hidden="true"
+                  className="mr-1.5 text-xs"
+                />
+                Payment · {order.isPaid ? 'Paid' : 'Pending'}
+              </Badge>
 
-              <p className="font-semibold">
-                Qty
-              </p>
-
-              <p>{item.count}</p>
-
+              <Badge tone={order.isDelivered ? 'info' : 'neutral'}>
+                <FontAwesomeIcon
+                  icon={faTruck}
+                  aria-hidden="true"
+                  className="mr-1.5 text-xs"
+                />
+                {order.isDelivered ? 'Order · Delivered' : 'Order · Processing'}
+              </Badge>
             </div>
-
-            <div className="text-green-600 font-black text-xl">
-              {item.price} EGP
-            </div>
-
           </div>
-        ))}
+        </div>
+      </header>
 
+      {/* Body */}
+      <div className="mt-6 grid gap-6 lg:grid-cols-[1fr_340px]">
+        {/* Order items */}
+        <div className="card p-5 sm:p-6">
+          <h2 className="text-lg font-bold text-strong">Order Items</h2>
+
+          <ul className="mt-5 divide-y divide-line">
+            {items.map((item) => (
+              <li key={item._id} className="flex gap-4 py-4 first:pt-0 last:pb-0">
+                <img
+                  src={item.product?.imageCover}
+                  alt={item.product?.title || 'Product'}
+                  loading="lazy"
+                  className="h-20 w-20 shrink-0 rounded-xl border border-line object-cover"
+                />
+
+                <div className="min-w-0 flex-1">
+                  <h3 className="font-semibold leading-snug text-strong">
+                    {item.product?.title || 'Product'}
+                  </h3>
+                  <p className="mt-1 text-sm text-muted">
+                    Qty {item.count} × {formatPrice(item.price)}
+                  </p>
+
+                  {/* Line total on mobile */}
+                  <p className="mt-2 font-bold text-primary-600 lg:hidden">
+                    {formatPrice((item.price || 0) * (item.count || 0))}
+                  </p>
+                </div>
+
+                {/* Line total on desktop */}
+                <p className="hidden shrink-0 self-center font-bold text-primary-600 lg:block">
+                  {formatPrice((item.price || 0) * (item.count || 0))}
+                </p>
+              </li>
+            ))}
+          </ul>
+        </div>
+
+        {/* Summary + payment + shipping */}
+        <div className="space-y-6">
+          {/* Totals */}
+          <div className="card p-5 sm:p-6">
+            <h2 className="text-lg font-bold text-strong">Order Summary</h2>
+
+            <dl className="mt-5 space-y-3 text-sm">
+              <div className="flex items-center justify-between">
+                <dt className="text-muted">Items ({itemCount})</dt>
+                <dd className="font-medium text-strong">
+                  {formatPrice(subtotal)}
+                </dd>
+              </div>
+            </dl>
+
+            <div className="mt-4 flex items-end justify-between border-t border-line pt-4">
+              <span className="font-bold text-strong">Total</span>
+              <span className="text-xl font-black text-primary-600 sm:text-2xl">
+                {formatPrice(order.totalOrderPrice)}
+              </span>
+            </div>
+          </div>
+
+          {/* Payment */}
+          <div className="card p-5 sm:p-6">
+            <h2 className="text-lg font-bold text-strong">
+              Payment Information
+            </h2>
+
+            <div className="mt-5 space-y-4">
+              {order.paymentMethodType && (
+                <InfoRow
+                  icon={faCreditCard}
+                  label="Payment method"
+                  value={
+                    order.paymentMethodType === 'cash'
+                      ? 'Cash on delivery'
+                      : order.paymentMethodType
+                  }
+                />
+              )}
+
+              <div>
+                <p className="text-xs font-medium uppercase tracking-wide text-muted">
+                  Payment status
+                </p>
+                <div className="mt-1.5">
+                  <Badge tone={order.isPaid ? 'success' : 'warning'}>
+                    <FontAwesomeIcon
+                      icon={order.isPaid ? faCircleCheck : faClock}
+                      aria-hidden="true"
+                      className="mr-1.5 text-xs"
+                    />
+                    {order.isPaid ? 'Paid' : 'Pending'}
+                  </Badge>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Shipping */}
+          {(addressDetails || order.user?.name) && (
+            <div className="card p-5 sm:p-6">
+              <h2 className="text-lg font-bold text-strong">
+                Shipping Information
+              </h2>
+
+              <div className="mt-5 space-y-4">
+                <InfoRow icon={faUser} label="Name" value={order.user?.name} />
+                <InfoRow
+                  icon={faPhone}
+                  label="Phone"
+                  value={order.user?.phone}
+                />
+                <InfoRow
+                  icon={faLocationDot}
+                  label="Address"
+                  value={addressDetails}
+                />
+              </div>
+            </div>
+          )}
+        </div>
       </div>
 
-    </div>
+      {/* Actions */}
+      <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:justify-between">
+        <Link to="/orders" className="w-full sm:w-auto">
+          <Button variant="outline" className="w-full sm:w-auto">
+            <FontAwesomeIcon icon={faArrowLeft} aria-hidden="true" />
+            Back to Orders
+          </Button>
+        </Link>
+
+        <Link to="/products" className="w-full sm:w-auto">
+          <Button className="w-full sm:w-auto">Continue Shopping</Button>
+        </Link>
+      </div>
     </section>
-</>
+  );
 }

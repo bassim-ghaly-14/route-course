@@ -1,18 +1,13 @@
 import { useQuery } from '@tanstack/react-query';
-import { axiosInstance } from '../api/axiosInstance';
-
-async function fetchRelated(categoryId, productId) {
-  const { data } = await axiosInstance.get(
-    `/products?category[in]=${categoryId}`
-  );
-
-  return data.data.filter((p) => p._id !== productId);
-}
+import { getRelatedProducts } from '../api/products';
 
 export default function useRelatedProducts(categoryId, productId) {
   return useQuery({
-    queryKey: ['related', categoryId],
-    queryFn: () => fetchRelated(categoryId, productId),
+    // productId MUST be part of the key: the fetch filters out the current
+    // product, so navigating between products of the same category would
+    // otherwise return a cached list missing the new current product.
+    queryKey: ['related-products', categoryId, productId],
+    queryFn: () => getRelatedProducts(categoryId, productId),
     enabled: !!categoryId,
   });
 }

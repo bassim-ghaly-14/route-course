@@ -1,13 +1,13 @@
 export default function CartSkeleton() {
   return (
     <section className="py-8">
-      <h2 className="text-2xl text-green-600 py-10 font-bold">
+      <h2 className="text-2xl text-primary-600 py-10 font-bold">
         Shop Now
       </h2>
 
-      <div className="overflow-x-auto bg-white shadow-xl rounded-2xl border border-green-100">
+      <div className="overflow-x-auto bg-white shadow-xl rounded-2xl border border-primary-100">
         <table className="w-full animate-pulse">
-          <thead className="bg-green-50 border-b border-green-100">
+          <thead className="bg-primary-50 border-b border-primary-100">
             <tr>
               <th className="px-16 py-4"></th>
               <th className="px-6 py-4"></th>

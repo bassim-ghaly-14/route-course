@@ -1,17 +1,27 @@
 import { useState, useContext } from 'react'
 import { useFormik } from 'formik'
 import * as Yup from 'yup'
-import { axiosInstance } from '../../api/axiosInstance'
-import { useNavigate } from 'react-router-dom'
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { faSpinner } from '@fortawesome/free-solid-svg-icons'
+import { signIn } from '../../api/auth'
+import { getApiErrorMessage } from '../../api/apiError'
+import { useNavigate, useSearchParams, Navigate } from 'react-router-dom'
 import { UserContext } from '../../Context/UserContext'
+import Input from '../ui/Input'
+import Button from '../ui/Button'
+
+// Only allow internal application paths as redirect targets.
+function sanitizeReturnTo(raw) {
+  if (!raw || !raw.startsWith('/') || raw.startsWith('//')) return null
+  return raw
+}
 
 export default function Login() {
   let navigate = useNavigate()
-  const { saveUserToken } = useContext(UserContext)
+  const [searchParams] = useSearchParams()
+  const { saveUserToken, isAuthenticated } = useContext(UserContext)
   const [error, seterror] = useState(null)
   const [loading, setloading] = useState(false)
+
+  const returnTo = sanitizeReturnTo(searchParams.get('returnTo'))
 
   let user = {
     email: '',
@@ -23,32 +33,27 @@ export default function Login() {
       .required('Email is Required')
       .email('Invalid Email'),
 
-    password: Yup.string()
-      .required('Password is Required')
-      .min(6, 'Minimum 6')
-      .max(20, 'Maximum 20')
-      .matches(/^[A-Z][a-z0-9]{3,8}$/, 'Invalid Password'),
+    // Login must never block valid credentials client-side: the server is
+    // the authority on whether a password is correct (the old pattern-based
+    // rule locked out users whose real passwords didn't match it).
+    password: Yup.string().required('Password is Required'),
   })
 
 async function submitForm(val) {
   try {
     setloading(true)
     // API CALL to Login
-    const { data } = await axiosInstance.post('/auth/signin', val)
+    const data = await signIn(val)
 
-    // SUCCESSFUL LOGIN, NOW HOME
+    // SUCCESSFUL LOGIN, NOW HOME (or the originally requested page)
     saveUserToken(data.token)
 
-    navigate('/')
+    navigate(returnTo || '/', { replace: true })
 
   } catch (err) {
   console.error("API ERROR:", err.response?.data)
     // ERROR HANDLING
-  seterror(
-    err?.response?.data?.message ||
-    err?.response?.data?.error ||
-    JSON.stringify(err?.response?.data)
-  )
+  seterror(getApiErrorMessage(err))
   setloading(false)
   } finally {
     setloading(false)
@@ -61,85 +66,60 @@ async function submitForm(val) {
     validationSchema: validate
   })
 
+  // Already signed in? No need to show the login form again.
+  // (Kept after hooks so hook order stays stable.)
+  if (isAuthenticated) {
+    return <Navigate to="/" replace />
+  }
+
   return (
     <>
-      <div className="mx-auto py-20">
-        <h2 className="font-bold text-4xl text-green-600">
-          Login Now
-        </h2>
+      <div className="page-container py-16 sm:py-20">
+        <div className="card mx-auto max-w-md p-6 sm:p-8">
+          <h1 className="section-header mb-2">
+            Login Now
+          </h1>
 
-        <form onSubmit={formik.handleSubmit} className="max-w-md mx-auto py-5">
+          <p className="mb-6 text-sm text-muted">
+            Welcome back to TRADO.
+          </p>
 
-          {/* Email */}
-          <div className="relative z-0 w-full mb-5 group">
-            <input
-              value={formik.values.email}
-              onBlur={formik.handleBlur}
-              onChange={formik.handleChange}
-              type="text"
+          <form onSubmit={formik.handleSubmit} noValidate>
+
+            <Input
               name="email"
-              id="email"
-              className="block py-2.5 px-0 w-full text-sm text-gray-900 bg-transparent border-0 border-b-2 border-gray-300 appearance-none focus:outline-none focus:ring-0 focus:border-green-600 peer"
-              placeholder=" "
-            />
-            <label
-              htmlFor="email"
-              className="absolute text-sm text-gray-500 duration-300 transform -translate-y-6 scale-75 top-3 -z-10 origin-[0] peer-focus:start-0 peer-focus:text-green-600 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0 peer-focus:scale-75 peer-focus:-translate-y-6"
-            >
-              Enter Your Email
-            </label>
-          </div>
-
-          {formik.errors.email && formik.touched.email ?
-            <div className="p-4 mb-4 text-sm text-red-700 bg-red-100 border border-red-300 rounded-lg" role="alert">
-              {formik.errors.email}
-            </div> : null
-          }
-
-          {/* Password */}
-          <div className="relative z-0 w-full mb-5 group">
-            <input
-              value={formik.values.password}
-              onBlur={formik.handleBlur}
+              label="Enter Your Email"
+              type="email"
+              autoComplete="email"
+              value={formik.values.email}
               onChange={formik.handleChange}
-              type="password"
-              name="password"
-              id="password"
-              className="block py-2.5 px-0 w-full text-sm text-gray-900 bg-transparent border-0 border-b-2 border-gray-300 appearance-none focus:outline-none focus:ring-0 focus:border-green-600 peer"
-              placeholder=" "
+              onBlur={formik.handleBlur}
+              error={formik.touched.email ? formik.errors.email : undefined}
             />
-            <label
-              htmlFor="password"
-              className="absolute text-sm text-gray-500 duration-300 transform -translate-y-6 scale-75 top-3 -z-10 origin-[0] peer-focus:start-0 peer-focus:text-green-600 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0 peer-focus:scale-75 peer-focus:-translate-y-6"
-            >
-              Enter Your Password
-            </label>
-          </div>
 
-          {formik.errors.password && formik.touched.password ?
-            <div className="p-4 mb-4 text-sm text-red-700 bg-red-100 border border-red-300 rounded-lg" role="alert">
-              {formik.errors.password}
-            </div> : null
-          }
+            <Input
+              name="password"
+              label="Enter Your Password"
+              type="password"
+              autoComplete="current-password"
+              value={formik.values.password}
+              onChange={formik.handleChange}
+              onBlur={formik.handleBlur}
+              error={formik.touched.password ? formik.errors.password : undefined}
+            />
 
-          {error ?
-            <div className="p-4 mb-4 text-sm text-red-700 bg-red-100 border border-red-300 rounded-lg" role="alert">
-              {error}
-            </div> : null
-          }
+            {error ?
+              <div className="mb-4 rounded-lg bg-red-50 p-4 text-sm text-error" role="alert">
+                {error}
+              </div> : null
+            }
 
-          <button
-            type="submit"
-            className="text-white bg-green-600 hover:bg-green-700 focus:ring-4 focus:ring-green-300 font-medium rounded-lg text-sm px-4 py-2.5 focus:outline-none"
-          >
-            {loading ? (
-              <FontAwesomeIcon icon={faSpinner} spin />
-            ) : (
-              'Submit'
-            )}
-          </button>
+            <Button type="submit" loading={loading} className="mt-2 w-full">
+              {loading ? 'Signing in...' : 'Submit'}
+            </Button>
 
-        </form>
+          </form>
+        </div>
       </div>
     </>
   )

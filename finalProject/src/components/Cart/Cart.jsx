@@ -1,105 +1,110 @@
-import { useContext, useEffect, useState } from "react";
-import { CartContext } from "../../Context/CartContext";
+import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import { Link } from "react-router-dom";
 import CartSkeleton from "./CartSkeleton";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faCartShopping } from "@fortawesome/free-solid-svg-icons";
+import {
+  faCartShopping,
+  faSpinner,
+  faTriangleExclamation,
+} from "@fortawesome/free-solid-svg-icons";
 import toast from "react-hot-toast";
+import {
+  useCart,
+  useUpdateCartItem,
+  useDeleteCartItem,
+  useClearCart,
+} from "../../hooks/useCart";
+import { getApiErrorMessage } from "../../api/apiError";
+import { formatPrice } from "../../lib/format";
+import ErrorState from "../ui/ErrorState";
+import Button from "../ui/Button";
 
 export default function Cart() {
-  const [cartitems, setcartitems] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  // Server state comes from the shared ['cart'] query cache.
+  const { data, isLoading, isError, refetch } = useCart();
+  const updateMutation = useUpdateCartItem();
+  const deleteMutation = useDeleteCartItem();
+  const clearMutation = useClearCart();
 
-  const {
-    getLoggedCart,
-    updateProduct,
-    deleteProduct,
-    emptyCart,
-  } = useContext(CartContext);
+  const cartitems = data?.data;
 
-  async function getCartItems() {
+  // ── Empty-cart confirmation (destructive action) ──────────────────────
+  // Same dialog pattern as the Navbar logout confirm: portaled to <body>,
+  // Escape-to-close, body scroll lock, backdrop click cancels.
+  const [showClearConfirm, setShowClearConfirm] = useState(false);
+
+  useEffect(() => {
+    if (!showClearConfirm) return;
+
+    const onKeyDown = (e) => {
+      if (e.key === "Escape") setShowClearConfirm(false);
+    };
+    document.addEventListener("keydown", onKeyDown);
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+
+    return () => {
+      document.removeEventListener("keydown", onKeyDown);
+      document.body.style.overflow = previousOverflow;
+    };
+  }, [showClearConfirm]);
+
+  async function confirmEmptyCart() {
     try {
-      setError(null);
-
-      const response = await getLoggedCart();
-
-      setcartitems(response.data.data);
-
-      if (response.data.cartId) {
-        localStorage.setItem("cartId", response.data.cartId);
-      }
+      await clearMutation.mutateAsync();
+      setShowClearConfirm(false);
     } catch (err) {
       console.error(err);
-      setError("Failed to load your cart. Please try again.");
-    } finally {
-      setLoading(false);
+      toast.error(getApiErrorMessage(err, "Failed to empty cart"));
     }
   }
 
+  // The single item currently being mutated (update or remove). Drives
+  // per-row loading state AND blocks overlapping mutations on that row.
+  const pendingItemId = updateMutation.isPending
+    ? updateMutation.variables?.productId
+    : deleteMutation.isPending
+      ? deleteMutation.variables
+      : null;
+
   async function updateCartProducts(prodId, count) {
+    if (pendingItemId) return; // prevent duplicate/overlapping mutations
+
     if (count < 1) {
       return deleteCartProducts(prodId);
     }
 
     try {
-      const response = await updateProduct(prodId, count);
-      setcartitems(response.data.data);
+      await updateMutation.mutateAsync({ productId: prodId, count });
     } catch (err) {
       console.error(err);
-      toast.error("Failed to update quantity");
+      toast.error(getApiErrorMessage(err, "Failed to update quantity"));
     }
   }
 
   async function deleteCartProducts(prodId) {
+    if (pendingItemId) return; // prevent duplicate/overlapping mutations
+
     try {
-      const response = await deleteProduct(prodId);
-      setcartitems(response.data.data);
+      await deleteMutation.mutateAsync(prodId);
     } catch (err) {
       console.error(err);
-      toast.error("Failed to remove item");
+      toast.error(getApiErrorMessage(err, "Failed to remove item"));
     }
   }
 
-  async function emptyCartProducts() {
-    try {
-      await emptyCart();
-
-      setcartitems({
-        products: [],
-        totalCartPrice: 0,
-      });
-    } catch (err) {
-      console.error(err);
-      toast.error("Failed to empty cart");
-    }
-  }
-
-  useEffect(() => {
-    async function loadCart() {
-      await getCartItems();
-    }
-
-    loadCart();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  if (loading) {
+  if (isLoading) {
     return <CartSkeleton />;
   }
 
-  if (error) {
+  if (isError) {
     return (
-      <section className="flex min-h-[60vh] flex-col items-center justify-center px-4 py-12 text-center sm:px-6">
-        <p className="mb-4 text-red-600">{error}</p>
-
-        <button
-          onClick={getCartItems}
-          className="rounded-xl bg-green-600 px-6 py-3 text-white transition hover:bg-green-700"
-        >
-          Try Again
-        </button>
-      </section>
+      <ErrorState
+        message="Failed to load your cart. Please try again."
+        onRetry={() => refetch()}
+        className="min-h-[60vh]"
+      />
     );
   }
 
@@ -112,20 +117,21 @@ export default function Cart() {
       <section className="flex min-h-[60vh] flex-col items-center justify-center px-4 py-12 text-center sm:px-6">
         <FontAwesomeIcon
           icon={faCartShopping}
-          className="mb-4 text-6xl text-green-600 animate-bounce"
+          aria-hidden="true"
+          className="mb-4 text-6xl text-primary-600 animate-bounce"
         />
 
-        <h2 className="text-2xl font-bold text-gray-700">
+        <h2 className="text-2xl font-bold text-strong">
           Your Cart is Empty
         </h2>
 
-        <p className="mt-2 max-w-md text-gray-500">
+        <p className="mt-2 max-w-md text-muted">
           Looks like you haven’t added anything yet.
         </p>
 
         <Link
           to="/products"
-          className="mt-6 rounded-xl bg-green-600 px-6 py-3 text-white transition hover:bg-green-700"
+          className="mt-6 inline-flex min-h-11 items-center rounded-xl bg-primary-600 px-6 py-2.5 font-semibold text-white shadow-sm transition hover:bg-primary-700 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-primary-200"
         >
           Start Shopping
         </Link>
@@ -134,18 +140,18 @@ export default function Cart() {
   }
 
   return (
-    <section className="px-4 py-6 sm:px-6 sm:py-8 lg:px-8">
+    <section className="py-6 sm:py-8">
       <div className="mx-auto max-w-7xl">
         <div className="mb-6 sm:mb-8">
-          <h2 className="text-2xl font-bold text-green-600 sm:text-3xl">
+          <h2 className="section-header">
             Shop Now
           </h2>
         </div>
 
-        <div className="overflow-hidden rounded-2xl border border-green-100 bg-white shadow-xl">
+        <div className="card overflow-hidden shadow-md">
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[760px] text-left text-sm">
-              <thead className="border-b border-green-100 bg-green-50">
+            <table className="w-full min-w-190 text-left text-sm">
+              <thead className="border-b border-primary-100 bg-primary-50">
                 <tr>
                   <th scope="col" className="w-28 px-4 py-4 sm:px-5">
                     <span className="sr-only">Image</span>
@@ -182,15 +188,24 @@ export default function Cart() {
               </thead>
 
               <tbody>
-                {cartitems.products.map((product) => (
+                {cartitems.products.map((product) => {
+                  const isPending = pendingItemId === product.product.id;
+
+                  return (
                   <tr
                     key={product.product.id}
-                    className="border-b border-gray-100 transition-all duration-300 hover:bg-green-50"
+                    className={`border-b border-gray-100 transition-all duration-300 hover:bg-primary-50 ${
+                      isPending ? "opacity-60" : ""
+                    }`}
                   >
                     <td className="px-4 py-4 sm:px-5">
                       <img
                         src={product.product.imageCover}
-                        className="h-16 w-16 rounded-xl border border-green-100 object-cover sm:h-20 sm:w-20"
+                        width={80}
+                        height={80}
+                        loading="lazy"
+                        decoding="async"
+                        className="h-16 w-16 rounded-xl border border-primary-100 object-cover sm:h-20 sm:w-20"
                         alt={product.product.title}
                       />
                     </td>
@@ -202,7 +217,7 @@ export default function Cart() {
                     </td>
 
                     <td className="px-4 py-4 sm:px-5">
-                      <div className="inline-flex items-center gap-2 rounded-full border border-green-100 bg-green-50 px-2.5 py-1.5 sm:gap-3 sm:px-3 sm:py-2">
+                      <div className="inline-flex items-center gap-2 rounded-full border border-primary-100 bg-primary-50 px-2.5 py-1.5 sm:gap-3 sm:px-3 sm:py-2">
                         <button
                           onClick={() =>
                             updateCartProducts(
@@ -210,9 +225,10 @@ export default function Cart() {
                               product.count - 1
                             )
                           }
+                          disabled={isPending || product.count <= 1}
                           type="button"
                           aria-label={`Decrease quantity of ${product.product.title}`}
-                          className="flex h-8 w-8 items-center justify-center rounded-full border border-green-200 bg-white transition-all hover:bg-green-600 hover:text-white"
+                          className="flex h-8 w-8 items-center justify-center rounded-full border border-primary-200 bg-white transition-all hover:bg-primary-600 hover:text-white disabled:cursor-not-allowed disabled:opacity-40"
                         >
                           <svg
                             className="h-3 w-3"
@@ -234,7 +250,15 @@ export default function Cart() {
                         </button>
 
                         <span className="min-w-5 text-center font-bold text-gray-700">
-                          {product.count}
+                          {isPending ? (
+                            <FontAwesomeIcon
+                              icon={faSpinner}
+                              spin
+                              aria-label="Updating quantity"
+                            />
+                          ) : (
+                            product.count
+                          )}
                         </span>
 
                         <button
@@ -244,9 +268,11 @@ export default function Cart() {
                               product.count + 1
                             )
                           }
+// __CART2__
+                          disabled={isPending}
                           type="button"
                           aria-label={`Increase quantity of ${product.product.title}`}
-                          className="flex h-8 w-8 items-center justify-center rounded-full border border-green-200 bg-white transition-all hover:bg-green-600 hover:text-white"
+                          className="flex h-8 w-8 items-center justify-center rounded-full border border-primary-200 bg-white transition-all hover:bg-primary-600 hover:text-white disabled:cursor-not-allowed disabled:opacity-40"
                         >
                           <svg
                             className="h-3 w-3"
@@ -270,50 +296,64 @@ export default function Cart() {
                     </td>
 
                     <td className="whitespace-nowrap px-4 py-4 sm:px-5">
-                      <span className="text-base font-bold text-green-600">
-                        {product.price} EGP
+                      <span className="text-base font-bold text-primary-600">
+                        {formatPrice(product.price)}
                       </span>
                     </td>
 
                     <td className="px-4 py-4 sm:px-5">
                       <button
                         type="button"
+                        disabled={isPending}
                         onClick={() =>
                           deleteCartProducts(product.product.id)
                         }
-                        className="font-medium text-red-500 transition hover:text-red-700 hover:underline"
+                        className="font-medium text-red-500 transition hover:text-red-700 hover:underline disabled:cursor-not-allowed disabled:opacity-40"
                       >
                         Remove
                       </button>
                     </td>
                   </tr>
-                ))}
+                  );
+                })}
               </tbody>
             </table>
           </div>
 
-          <div className="border-t border-green-100 bg-green-50/40 p-4 sm:p-5 lg:p-6">
+          <div className="border-t border-primary-100 bg-primary-50/40 p-4 sm:p-5 lg:p-6">
             <div className="mb-5 flex flex-col items-center justify-between gap-2 sm:flex-row">
-              <h3 className="text-lg font-semibold text-gray-700 sm:text-xl">
+              <h3 className="text-lg font-semibold text-strong sm:text-xl">
                 Total Price
+                <span className="ml-2 text-sm font-medium text-muted">
+                  ({cartitems?.numOfCartItems ?? cartitems?.products?.length}{" "}
+                  item
+                  {(cartitems?.numOfCartItems ?? cartitems?.products?.length) === 1
+                    ? ""
+                    : "s"}
+                  )
+                </span>
               </h3>
 
-              <span className="text-xl font-bold text-green-600 sm:text-2xl">
-                {cartitems?.totalCartPrice} EGP
+              <span className="text-xl font-extrabold text-primary-700 sm:text-2xl">
+                {formatPrice(cartitems?.totalCartPrice)}
               </span>
             </div>
 
             <div className="flex flex-col gap-3 sm:flex-row sm:gap-4">
-              <button
-                onClick={emptyCartProducts}
-                className="flex-1 rounded-xl border border-red-200 bg-white py-3 font-medium text-red-500 transition-all duration-300 hover:bg-red-500 hover:text-white"
+              <Button
+                variant="dangerOutline"
+                size="lg"
+                loading={clearMutation.isPending}
+                onClick={() => setShowClearConfirm(true)}
+                className="flex-1"
               >
                 Empty Cart
-              </button>
+              </Button>
 
               <Link
                 to="/checkout"
-                className="flex-1 rounded-xl bg-green-600 py-3 text-center font-medium text-white shadow-md transition-all duration-300 hover:bg-green-700 hover:shadow-lg"
+                aria-label="Proceed to checkout"
+                className="inline-flex min-h-12 flex-1 items-center justify-center rounded-xl bg-primary-600 py-3 text-base font-semibold text-white shadow-sm transition-colors duration-200 hover:bg-primary-700 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-primary-200"
               >
                 Check Out
               </Link>
@@ -321,6 +361,61 @@ export default function Cart() {
           </div>
         </div>
       </div>
+
+      {/* ── Empty-cart confirmation ─────────────────────────────────────── */}
+      {showClearConfirm &&
+        createPortal(
+          <div
+            className="modal-overlay fixed inset-0 z-999 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm"
+            onClick={() => setShowClearConfirm(false)}
+          >
+            <div
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="clear-cart-title"
+              aria-describedby="clear-cart-description"
+              className="modal-card card w-full max-w-md p-6 text-center shadow-xl sm:p-8"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <span className="mx-auto mb-4 flex size-14 items-center justify-center rounded-full bg-red-100">
+                <FontAwesomeIcon
+                  icon={faTriangleExclamation}
+                  aria-hidden="true"
+                  className="text-2xl text-error"
+                />
+              </span>
+
+              <h2 id="clear-cart-title" className="mb-2 text-xl font-bold text-strong">
+                Empty Your Cart?
+              </h2>
+
+              <p
+                id="clear-cart-description"
+                className="mb-6 text-muted"
+              >
+                This will permanently remove all items from your cart. This
+                action cannot be undone.
+              </p>
+
+              <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-center">
+                <Button variant="ghost" onClick={() => setShowClearConfirm(false)}>
+                  Cancel
+                </Button>
+
+                <Button
+                  variant="danger"
+                  autoFocus
+                  loading={clearMutation.isPending}
+                  onClick={confirmEmptyCart}
+                  className="min-w-36"
+                >
+                  Empty Cart
+                </Button>
+              </div>
+            </div>
+          </div>,
+          document.body
+        )}
     </section>
   );
 }

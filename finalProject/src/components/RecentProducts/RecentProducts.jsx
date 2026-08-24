@@ -1,175 +1,83 @@
-import { axiosInstance } from "../../api/axiosInstance";
-import { useState, useEffect, useContext } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faStar, faSpinner, faCartPlus } from "@fortawesome/free-solid-svg-icons";
+import { faSpinner, faCartPlus } from "@fortawesome/free-solid-svg-icons";
 
-import { Link } from "react-router-dom";
-import { CartContext } from "../../Context/CartContext";
-import toast from "react-hot-toast";
+import useAddToCart from "../../hooks/useAddToCart";
+import useProducts from "../../hooks/useProducts";
+import ProductCard from "../ui/ProductCard";
+import ErrorState from "../ui/ErrorState";
 
 import RecentProductsSkeleton from "./RecentProductsSkeleton";
 
 export default function RecentProducts() {
-  const { addProduct } = useContext(CartContext);
+  const { addToCart, addingId } = useAddToCart();
 
-  const [recentProducts, setRecentProducts] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [btnLoading, setBtnLoading] = useState(false);
-  const [productId, setproductId] = useState(null);
+  const {
+    data,
+    isLoading,
+    isError,
+    refetch,
+  } = useProducts();
 
-  async function addProductToCart(prodId) {
-    setproductId(prodId);
-    setBtnLoading(true);
+  const recentProducts = data?.products ?? [];
 
-    try {
-      const response = await addProduct(prodId);
-
-      if (response?.data?.status === "success") {
-        toast.success(response.data.message || "Added to cart", {
-          position: "bottom-right",
-          duration: 1000,
-        });
-      } else {
-        toast.error("Failed to add product to cart", {
-          position: "bottom-right",
-          duration: 1000,
-        });
-      }
-    } catch (err) {
-      console.error(err);
-      toast.error(
-        err?.response?.data?.message || "Failed to add product to cart",
-        { position: "bottom-right", duration: 1000 }
-      );
-    } finally {
-      setBtnLoading(false);
-    }
-  }
-
-  useEffect(() => {
-    async function fetchProducts() {
-      try {
-        setError(null);
-        const { data } = await axiosInstance.get("/products");
-
-        setRecentProducts(data.data || []);
-      } catch (err) {
-        console.error(err);
-        setError("Failed to load products.");
-      } finally {
-        setLoading(false);
-      }
-    }
-
-    fetchProducts();
-  }, []);
-
-  // Only show the skeleton while the request is actually in flight.
-  // Previously an empty/failed result kept the skeleton on screen forever.
-  if (loading) {
+  if (isLoading) {
     return <RecentProductsSkeleton />;
   }
 
-  if (error) {
-    return <div className="text-center py-10 text-red-600">{error}</div>;
+  if (isError) {
+    return (
+      <div className="py-6">
+        <ErrorState
+          message="Failed to load products."
+          onRetry={refetch}
+        />
+      </div>
+    );
   }
 
   if (recentProducts.length === 0) {
     return (
-      <div className="text-center py-10 text-gray-500">
+      <div className="py-10 text-center text-muted">
         No products available right now.
       </div>
     );
   }
 
   return (
-    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 transition-opacity duration-500">
+    <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-5">
       {recentProducts.map((product) => (
-        <div
-          key={product._id}
-          className="
-          group
-          overflow-hidden
-          rounded-xl
-          bg-white
-          shadow-md
-          hover:shadow-2xl
-          hover:-translate-y-1
-          transition-all duration-300"
-        >
-          <Link to={`/productDetails/${product._id}`}>
-            <div>
-              <div className="p-3">
-                <img
-                  src={product.imageCover}
-                  alt={product.title}
-                  className="w-full"
-                />
-
-                <span className="text-green-600 text-sm">
-                  {product.category?.name}
-                </span>
-
-                <h4 className="font-semibold my-2">
-                  {product.title?.split(" ").slice(0, 2).join(" ")}
-                </h4>
-
-                <div className="flex justify-between items-center mb-3">
-                  <span className="text-green-600 font-semibold">
-                    {product.price} EGP
-                  </span>
-
-                  <span>
-                    <FontAwesomeIcon
-                      className="text-yellow-400"
-                      icon={faStar}
-                    />
-                    {product.ratingsAverage}
-                  </span>
-                </div>
-              </div>
-            </div>
-          </Link>
-
+        <ProductCard key={product._id} product={product}>
           <button
             type="button"
             aria-label={`Add ${product.title} to cart`}
-            disabled={btnLoading && productId === product._id}
-            onClick={() => addProductToCart(product._id)}
+            disabled={addingId === product._id}
+            onClick={() => addToCart(product._id)}
             className="
-              w-full
-              flex items-center justify-center gap-2
-              min-h-[48px]
-              bg-green-600
-              cursor-pointer
-              text-white
-              font-semibold
-              py-3
-              rounded-b-lg
-              hover:bg-green-700
-              active:scale-[0.98]
-              transition-all duration-300
-              focus:outline-none
-              focus:ring-4
-              focus:ring-green-300
-              disabled:opacity-70
+              flex min-h-12 w-full items-center justify-center gap-2
+              border-t border-line bg-primary-600
+              font-semibold text-white
+              transition-colors duration-300
+              hover:bg-primary-700
+              focus-visible:outline-none
+              focus-visible:ring-4
+              focus-visible:ring-primary-200
               disabled:cursor-not-allowed
+              disabled:opacity-70
             "
           >
-            {btnLoading && productId === product._id ? (
+            {addingId === product._id ? (
               <>
-                <FontAwesomeIcon icon={faSpinner} spin />
+                <FontAwesomeIcon icon={faSpinner} spin aria-hidden="true" />
                 Adding...
               </>
             ) : (
               <>
-                <FontAwesomeIcon icon={faCartPlus} />
+                <FontAwesomeIcon icon={faCartPlus} aria-hidden="true" />
                 Add To Cart
               </>
-          )}
+            )}
           </button>
-        </div>
+        </ProductCard>
       ))}
     </div>
   );

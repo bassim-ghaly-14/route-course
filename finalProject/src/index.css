@@ -1,10 +1,130 @@
 @import "tailwindcss";
-/* .row {
-  @apply flex flex-wrap py-6
-} */
+
+/* ============================================================
+   TRADO DESIGN TOKENS
+   One controlled palette (brand green), semantic surfaces,
+   a fixed radius/elevation hierarchy. Avoid arbitrary values
+   in JSX — map them here instead.
+   ============================================================ */
+@theme {
+  --font-sans: "Inter", ui-sans-serif, system-ui, -apple-system, sans-serif;
+
+  /* Brand: primary = TRADO green (kept from the original identity) */
+  --color-primary-50: #f0fdf4;
+  --color-primary-100: #dcfce7;
+  --color-primary-200: #bbf7d0;
+  --color-primary-300: #86efac;
+  --color-primary-400: #4ade80;
+  --color-primary-500: #22c55e;
+  --color-primary-600: #16a34a;
+  --color-primary-700: #15803d;
+  --color-primary-800: #166534;
+  --color-primary-900: #14532d;
+
+  /* Semantic surfaces & text */
+  --color-background: #f8fafc;
+  --color-surface: #ffffff;
+  --color-line: #e2e8f0;
+  --color-strong: #0f172a;
+  --color-muted: #64748b;
+
+  /* Status */
+  --color-success: #16a34a;
+  --color-warning: #d97706;
+  --color-error: #dc2626;
+}
+
+/* Radius hierarchy (use these; no arbitrary [32px] etc.)
+   small = rounded-md | medium = rounded-xl | large = rounded-2xl |
+   xlarge = rounded-3xl | full = rounded-full                        */
+
+/* Elevation hierarchy: shadow-sm < shadow-md < shadow-lg < shadow-xl.
+   No shadow-2xl, no colored glows outside brand CTAs.               */
+
+@layer base {
+  /* Layout-level spacing token: Navbar publishes its real rendered height
+     here (see Navbar.jsx) and Layout offsets <main> by it. */
+  :root {
+    --navbar-height: 4rem;
+  }
+
+  button {
+    @apply cursor-pointer;
+  }
+
+  /* Consistent keyboard focus everywhere */
+  :focus-visible {
+    outline: 2px solid var(--color-primary-600);
+    outline-offset: 2px;
+  }
+}
+
+@layer components {
+  /* Page container: one rhythm for every page, mobile-first padding */
+  .page-container {
+    @apply mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8;
+  }
+
+  /* Section headers share one typographic voice */
+  .section-header {
+    @apply mb-6 text-2xl font-bold tracking-tight text-primary-700 sm:text-3xl;
+  }
+
+  .section-header-light {
+    @apply mb-6 text-2xl font-bold tracking-tight text-white sm:text-3xl;
+  }
+
+  /* Card foundation */
+  .card {
+    @apply rounded-2xl border border-line bg-surface shadow-sm;
+  }
+
+  /* Glass accent — reserved for Navbar / hero overlay / floating UI */
+  .glass {
+    @apply border border-white/40 bg-white/75 backdrop-blur-md;
+  }
+
+  /* Modal entrance (Logout confirm & future dialogs): fast, restrained,
+     disabled for users who prefer reduced motion. */
+  .modal-overlay {
+    animation: modal-fade 150ms ease-out;
+  }
+
+  .modal-card {
+    animation: modal-pop 180ms ease-out;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .modal-overlay,
+    .modal-card {
+      animation: none;
+    }
+  }
+}
+
+@keyframes modal-fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes modal-pop {
+  from {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
 .swiper-button-next,
 .swiper-button-prev {
-  color: #16a34a !important; /* green-600 */
+  color: #16a34a !important; /* primary-600 */
 }
 
 .swiper-pagination-bullet {
@@ -13,9 +133,4 @@
 
 .swiper-pagination-bullet-active {
   background: #16a34a !important;
-}
-@layer base {
-  button {
-    @apply cursor-pointer;
-  }
 }

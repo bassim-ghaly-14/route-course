@@ -15,7 +15,7 @@ import {
 
 export default function Footer() {
   return (
-    <footer className="bg-white border-t border-gray-200 mt-20">
+    <footer className="bg-surface border-t border-line mt-20">
 
       <div className="container mx-auto px-6 lg:px-10 py-14">
 
@@ -24,11 +24,11 @@ export default function Footer() {
 
           {/* Brand */}
           <div>
-            <h2 className="text-3xl font-bold text-green-600 tracking-tight">
+            <h2 className="text-3xl font-bold text-primary-600 tracking-tight">
               TRADO
             </h2>
 
-            <p className="mt-4 text-sm text-gray-600 leading-relaxed">
+            <p className="mt-4 text-sm text-muted leading-relaxed">
               Your smart shopping destination. Discover products, compare prices,
               and enjoy a seamless shopping experience.
             </p>
@@ -36,88 +36,91 @@ export default function Footer() {
 
           {/* Links */}
           <div>
-            <h3 className="text-sm font-semibold text-gray-900 uppercase tracking-wide mb-4">
+            <h3 className="text-sm font-semibold text-strong uppercase tracking-wide mb-4">
               Quick Links
             </h3>
 
-            <ul className="space-y-3 text-sm text-gray-600">
-              <li><Link className="hover:text-green-600 transition" to="/">Home</Link></li>
-              <li><Link className="hover:text-green-600 transition" to="/products">Products</Link></li>
-              <li><Link className="hover:text-green-600 transition" to="/categories">Categories</Link></li>
-              <li><Link className="hover:text-green-600 transition" to="/cart">Cart</Link></li>
+            <ul className="space-y-3 text-sm text-muted">
+              <li><Link className="hover:text-primary-600 transition" to="/">Home</Link></li>
+              <li><Link className="hover:text-primary-600 transition" to="/products">Products</Link></li>
+              <li><Link className="hover:text-primary-600 transition" to="/categories">Categories</Link></li>
+              <li><Link className="hover:text-primary-600 transition" to="/cart">Cart</Link></li>
             </ul>
           </div>
 
-          {/* Categories */}
+          {/* Categories — informational only: these names have no stable
+              route/ID mapping in the API, so they are intentionally NOT
+              interactive. */}
           <div>
-            <h3 className="text-sm font-semibold text-gray-900 uppercase tracking-wide mb-4">
+            <h3 className="text-sm font-semibold text-strong uppercase tracking-wide mb-4">
               Popular Categories
             </h3>
 
-            <ul className="space-y-3 text-sm text-gray-600">
-              <li className="hover:text-green-600 cursor-pointer transition">Men</li>
-              <li className="hover:text-green-600 cursor-pointer transition">Women</li>
-              <li className="hover:text-green-600 cursor-pointer transition">Electronics</li>
-              <li className="hover:text-green-600 cursor-pointer transition">Beauty</li>
-              <li className="hover:text-green-600 cursor-pointer transition">Home</li>
+            <ul className="space-y-3 text-sm text-muted">
+              <li>Men</li>
+              <li>Women</li>
+              <li>Electronics</li>
+              <li>Beauty</li>
+              <li>Home</li>
             </ul>
           </div>
 
           {/* Contact */}
           <div>
-            <h3 className="text-sm font-semibold text-gray-900 uppercase tracking-wide mb-4">
+            <h3 className="text-sm font-semibold text-strong uppercase tracking-wide mb-4">
               Contact
             </h3>
 
-            <div className="space-y-4 text-sm text-gray-600">
+            <div className="space-y-4 text-sm text-muted">
 
               <div className="flex items-center gap-3">
-                <FontAwesomeIcon icon={faLocationDot} className="text-green-600" />
+                <FontAwesomeIcon icon={faLocationDot} className="text-primary-600" />
                 <span>Egypt</span>
               </div>
 
               <div className="flex items-center gap-3">
-                <FontAwesomeIcon icon={faPhone} className="text-green-600" />
+                <FontAwesomeIcon icon={faPhone} className="text-primary-600" />
                 <span>+20 100 000 0000</span>
               </div>
 
               <div className="flex items-center gap-3">
-                <FontAwesomeIcon icon={faEnvelope} className="text-green-600" />
+                <FontAwesomeIcon icon={faEnvelope} className="text-primary-600" />
                 <span>support@trado.com</span>
               </div>
 
             </div>
 
-            {/* Social */}
-            <div className="flex gap-4 mt-6 text-lg text-gray-500">
-              <a className="hover:text-green-600 transition" href="#">
+            {/* Social — no real profiles exist, so these are decorative
+                icons, not links pretending to work. */}
+            <div className="flex gap-4 mt-6 text-lg text-muted" aria-hidden="true">
+              <span>
                 <FontAwesomeIcon icon={faFacebook} />
-              </a>
-              <a className="hover:text-green-600 transition" href="#">
+              </span>
+              <span>
                 <FontAwesomeIcon icon={faInstagram} />
-              </a>
-              <a className="hover:text-green-600 transition" href="#">
+              </span>
+              <span>
                 <FontAwesomeIcon icon={faXTwitter} />
-              </a>
-              <a className="hover:text-green-600 transition" href="#">
+              </span>
+              <span>
                 <FontAwesomeIcon icon={faLinkedin} />
-              </a>
+              </span>
             </div>
           </div>
 
         </div>
 
         {/* Bottom */}
-        <div className="mt-14 pt-6 border-t border-gray-200 flex flex-col md:flex-row items-center justify-between gap-4 text-sm text-gray-500">
+        <div className="mt-14 pt-6 border-t border-gray-200 flex flex-col md:flex-row items-center justify-between gap-4 text-sm text-muted">
 
           <p>
             © {new Date().getFullYear()} TRADO. All rights reserved.
           </p>
 
           <div className="flex gap-6">
-            <span className="hover:text-green-600 cursor-pointer">Privacy</span>
-            <span className="hover:text-green-600 cursor-pointer">Terms</span>
-            <span className="hover:text-green-600 cursor-pointer">Support</span>
+            <span>Privacy</span>
+            <span>Terms</span>
+            <span>Support</span>
           </div>
 
         </div>

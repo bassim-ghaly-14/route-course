@@ -1,7 +1,7 @@
 export default function ProductsSkeleton() {
   return (
     <div className="container mx-auto px-10 py-8">
-      <h2 className="text-2xl font-bold mb-6 text-green-600">
+      <h2 className="text-2xl font-bold mb-6 text-primary-600">
         Category Products
       </h2>
 

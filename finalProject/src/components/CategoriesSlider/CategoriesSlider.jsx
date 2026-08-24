@@ -1,5 +1,3 @@
-import { axiosInstance } from "../../api/axiosInstance";
-import { useEffect, useState } from "react";
 import { Swiper, SwiperSlide } from "swiper/react";
 import { Navigation } from "swiper/modules";
 import { Link } from "react-router-dom";
@@ -7,40 +5,25 @@ import { Link } from "react-router-dom";
 import "swiper/css";
 import "swiper/css/navigation";
 
+import useCategories from "../../hooks/useCategories";
 import SliderSkeleton from "./SliderSkeleton";
+import ErrorState from "../ui/ErrorState";
 
 export default function CategoriesSlider() {
-  const [categories, setCategories] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const { data: categories = [], isLoading, isError, refetch } = useCategories();
 
-  useEffect(() => {
-    async function getCategories() {
-      try {
-        setError(null);
-        const { data } = await axiosInstance.get("/categories");
-
-        setCategories(data.data || []);
-      } catch (err) {
-        console.error(err);
-        setError("Failed to load categories.");
-      } finally {
-        setLoading(false);
-      }
-    }
-
-    getCategories();
-  }, []);
-
-  // Only show the skeleton while the request is actually in flight.
-  // Previously an empty/failed result kept the skeleton on screen forever.
-  if (loading) {
+  if (isLoading) {
     return <SliderSkeleton />;
   }
 
-  if (error) {
+  if (isError) {
     return (
-      <div className="my-10 text-center text-red-600">{error}</div>
+      <div className="my-10">
+        <ErrorState
+          message="Failed to load categories."
+          onRetry={refetch}
+        />
+      </div>
     );
   }
 
@@ -49,8 +32,8 @@ export default function CategoriesSlider() {
   }
 
   return (
-    <div className="my-10">
-      <h2 className="text-green-600 text-2xl font-bold mb-6">
+    <section className="my-10">
+      <h2 className="section-header">
         Shop Popular Categories
       </h2>
 
@@ -67,9 +50,9 @@ export default function CategoriesSlider() {
       >
         {categories.map((cat) => (
           <SwiperSlide key={cat._id}>
-            <Link to={`/category/${cat._id}`}>
+            <Link to={`/categories/${cat._id}`}>
               <div className="text-center group cursor-pointer">
-                <div className="overflow-hidden rounded-full border-2 border-gray-200 group-hover:border-green-600 transition">
+                <div className="overflow-hidden rounded-full border-2 border-gray-200 group-hover:border-primary-600 transition">
                   <img
                     src={cat.image}
                     alt={cat.name}
@@ -77,7 +60,7 @@ export default function CategoriesSlider() {
                   />
                 </div>
 
-                <p className="mt-2 text-sm font-medium group-hover:text-green-600 transition">
+                <p className="mt-2 text-sm font-medium group-hover:text-primary-600 transition">
                   {cat.name}
                 </p>
               </div>
@@ -85,6 +68,6 @@ export default function CategoriesSlider() {
           </SwiperSlide>
         ))}
       </Swiper>
-    </div>
+    </section>
   );
 }
