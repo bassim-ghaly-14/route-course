@@ -52,3 +52,16 @@ src/
 ├── lib/              # React Query client configuration
 └── App.jsx           # Router setup
 ```
+
+## Live Demo
+
+Explore the application and experience the authenticated features without creating an account.
+
+### Demo Account
+
+| Field    | Value             |
+| -------- | ----------------- |
+| Email    | `chatX@gmail.com` |
+| Password | `X12345`          |
+
+> **Demo account:** Use these credentials to explore the authenticated features of the application. Please do not change the account credentials or store personal information in this account.

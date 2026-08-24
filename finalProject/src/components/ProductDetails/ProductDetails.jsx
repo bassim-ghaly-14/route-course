@@ -1,4 +1,4 @@
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useNavigate } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faStar, faCartPlus, faSpinner } from '@fortawesome/free-solid-svg-icons';
 import { useState , useContext } from 'react';
@@ -6,10 +6,13 @@ import useProductDetails from '../../hooks/useProductDetails';
 import useRelatedProducts from '../../hooks/useRelatedProducts';
 
 import { CartContext } from '../../Context/CartContext';
+import { UserContext } from '../../Context/UserContext';
 import toast from 'react-hot-toast';
 
 export default function ProductDetails() {
   const { id } = useParams();
+  const { userToken } = useContext(UserContext);
+  const navigate = useNavigate();
   const { addProduct } = useContext(CartContext);
   const [addingToCart, setAddingToCart] = useState(false);
 
@@ -22,6 +25,15 @@ export default function ProductDetails() {
 
   async function handleAddToCart() {
   if (addingToCart) return;
+
+  // Adding to cart requires authentication (backend cart is per-user).
+  // Since product pages are now public, guide guests to login explicitly
+  // instead of letting the request fail with a 401.
+  if (!userToken) {
+    toast.error('Please login to add products to your cart');
+    navigate('/login');
+    return;
+  }
 
   try {
     setAddingToCart(true);
@@ -99,7 +111,7 @@ export default function ProductDetails() {
             className="
               flex items-center justify-center gap-3
               w-full md:w-auto
-              min-h-[52px]
+              min-h-13
               px-8 py-4
               rounded-xl
               cursor-pointer

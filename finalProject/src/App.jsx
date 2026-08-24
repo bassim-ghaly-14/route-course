@@ -30,42 +30,28 @@ const router = createBrowserRouter([
       {
         index: true,
         element: (
-          <ProtectRoutes>
             <Home />
-          </ProtectRoutes>
         ),
       },
       {
+        // PUBLIC: product details are viewable without authentication
         path: 'productDetails/:id',
-        element: (
-          <ProtectRoutes>
-            <ProductDetails />
-          </ProtectRoutes>
-        ),
+        element: <ProductDetails />,
       },
       {
+        // PUBLIC: category products are viewable without authentication
         path: 'category/:id',
-        element: (
-          <ProtectRoutes>
-            <CategoryProducts />
-          </ProtectRoutes>
-        ),
+        element: <CategoryProducts />,
       },
       {
+        // PUBLIC: categories browsing is viewable without authentication
         path: 'categories',
-        element: (
-          <ProtectRoutes>
-            <Categories />
-          </ProtectRoutes>
-        ),
+        element: <Categories />,
       },
       {
+        // PUBLIC: products listing is viewable without authentication
         path: 'products',
-        element: (
-          <ProtectRoutes>
-            <Products />
-          </ProtectRoutes>
-        ),
+        element: <Products />,
       },
       {
         path: 'cart',

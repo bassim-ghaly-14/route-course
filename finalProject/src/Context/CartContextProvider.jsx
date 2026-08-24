@@ -1,8 +1,10 @@
 import { CartContext } from './CartContext';
 import { axiosInstance } from '../api/axiosInstance';
-import { useEffect, useState } from 'react';
+import { UserContext } from './UserContext';
+import { useContext, useEffect, useState } from 'react';
 
 export default function CartContextProvider({ children }) {
+  const { userToken } = useContext(UserContext);
 
   const [cartItemsCount, setCartItemsCount] = useState(0);
 
@@ -77,6 +79,9 @@ export default function CartContextProvider({ children }) {
     }
   }
 
+  // Keep the Navbar cart badge in sync with the auth state:
+  // fetch on login. On logout the badge is reset by the Navbar's
+  // logout handler (setCartItemsCount(0)), so no setState is needed here.
   useEffect(() => {
     async function getCartCount() {
       try {
@@ -87,10 +92,10 @@ export default function CartContextProvider({ children }) {
       }
     }
 
-    if (localStorage.getItem('userToken')) {
+    if (userToken) {
       getCartCount();
     }
-  }, []);
+  }, [userToken]);
 
   return (
     <CartContext.Provider

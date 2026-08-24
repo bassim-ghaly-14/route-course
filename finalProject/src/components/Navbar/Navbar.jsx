@@ -48,6 +48,32 @@ export default function Navbar() {
 
           <ul className="flex flex-col lg:flex-row">
 
+            {/* PUBLIC links: visible to everyone (products/categories are public routes) */}
+            <li className="px-3 py-2">
+              <NavLink
+                to="/products"
+                className={({ isActive }) =>
+                  isActive ? "text-green-600 font-semibold" : "hover:text-green-600"
+                }
+              >
+                Products
+              </NavLink>
+            </li>
+
+            <li className="px-3 py-2">
+              <NavLink
+                to="/categories"
+                className={({ isActive }) =>
+                  `flex items-center gap-2 transition ${
+                    isActive ? "text-green-600 font-semibold" : "hover:text-green-600"
+                  }`
+                }
+              >
+                <FontAwesomeIcon icon={faLayerGroup} />
+                Categories
+              </NavLink>
+            </li>
+
             {userToken ? (
               <>
                 <li className="px-3 py-2">
@@ -59,31 +85,6 @@ export default function Navbar() {
                     }
                   >
                     Home
-                  </NavLink>
-                </li>
-
-                <li className="px-3 py-2">
-                  <NavLink
-                    to="/products"
-                    className={({ isActive }) =>
-                      isActive ? "text-green-600 font-semibold" : "hover:text-green-600"
-                    }
-                  >
-                    Products
-                  </NavLink>
-                </li>
-
-                <li className="px-3 py-2">
-                  <NavLink
-                    to="/categories"
-                    className={({ isActive }) =>
-                      `flex items-center gap-2 transition ${
-                        isActive ? "text-green-600 font-semibold" : "hover:text-green-600"
-                      }`
-                    }
-                  >
-                    <FontAwesomeIcon icon={faLayerGroup} />
-                    Categories
                   </NavLink>
                 </li>
 
@@ -105,8 +106,8 @@ export default function Navbar() {
                             absolute
                             -top-2
                             -right-3
-                            min-w-[22px]
-                            h-[22px]
+                            min-w-5.5
+                            h-5.5
                             px-1.5
                             flex
                             items-center
@@ -212,7 +213,7 @@ export default function Navbar() {
       </div>
 
       {showLogoutConfirm && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[999]">
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-999">
           
           <div className="bg-white rounded-2xl p-6 w-[90%] max-w-md shadow-2xl text-center">
             
